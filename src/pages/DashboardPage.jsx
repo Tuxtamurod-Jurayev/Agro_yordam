@@ -14,6 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { platformService } from '../services/platformService'
 import { formatDateTime } from '../utils/format'
@@ -21,15 +22,27 @@ import { formatDateTime } from '../utils/format'
 export function DashboardPage() {
   const { session } = useAuth()
   const [analytics, setAnalytics] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!session) {
-      return
+    async function loadAnalytics() {
+      if (!session) {
+        return
+      }
+
+      try {
+        setError('')
+        const nextAnalytics = await platformService.getAnalytics(session)
+        setAnalytics(nextAnalytics)
+      } catch (loadError) {
+        setError(loadError.message)
+      }
     }
-    platformService.getAnalytics(session).then(setAnalytics)
+
+    loadAnalytics()
   }, [session])
 
-  if (!analytics) {
+  if (!analytics && !error) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="glass-panel flex items-center gap-3 px-6 py-4">
@@ -40,40 +53,59 @@ export function DashboardPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <section className="glass-panel p-6 sm:p-8">
+          <h1 className="font-display text-4xl text-white">Dashboard</h1>
+          <div className="mt-6 rounded-[1.75rem] border border-rose-400/30 bg-rose-400/10 px-5 py-4 text-sm text-rose-100">
+            {error}
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  const cards = [
+    {
+      label: 'Jami scan',
+      value: analytics.totals.totalScans,
+      icon: Activity,
+    },
+    {
+      label: "O'rtacha ishonch",
+      value: `${analytics.totals.avgConfidence}%`,
+      icon: ShieldCheck,
+    },
+    {
+      label: 'Faol user',
+      value: analytics.totals.activeUsers,
+      icon: Users,
+    },
+    {
+      label: 'Kasalliklar',
+      value: analytics.totals.diseaseLibrary,
+      icon: Leaf,
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <section className="glass-panel p-6 sm:p-8">
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Admin analytics</p>
-        <h1 className="mt-3 font-display text-4xl text-white">Kasallik monitoring paneli</h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
-          Eng ko'p aniqlangan kasalliklar, faol foydalanuvchilar va scan dinamikasi shu sahifada
-          jamlangan. Ma'lumotlar real server API va Supabase Postgres orqali olinadi.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Admin</p>
+            <h1 className="mt-3 font-display text-4xl text-white">Dashboard</h1>
+          </div>
+          <Link to="/admin/users" className="button-primary">
+            <Users className="h-4 w-4" />
+            Userlarni boshqarish
+          </Link>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            label: 'Jami scan',
-            value: analytics.totals.totalScans,
-            icon: Activity,
-          },
-          {
-            label: "O'rtacha ishonch",
-            value: `${analytics.totals.avgConfidence}%`,
-            icon: ShieldCheck,
-          },
-          {
-            label: 'Faol foydalanuvchi',
-            value: analytics.totals.activeUsers,
-            icon: Users,
-          },
-          {
-            label: 'Kasallik kutubxonasi',
-            value: analytics.totals.diseaseLibrary,
-            icon: Leaf,
-          },
-        ].map((item) => {
+        {cards.map((item) => {
           const Icon = item.icon
 
           return (
@@ -96,7 +128,7 @@ export function DashboardPage() {
         <div className="glass-panel p-6">
           <div className="mb-5 flex items-center gap-3">
             <Activity className="h-5 w-5 text-cyan-200" />
-            <h2 className="font-display text-2xl text-white">Kunlik scan dinamikasi</h2>
+            <h2 className="font-display text-2xl text-white">Haftalik dinamikasi</h2>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -136,49 +168,54 @@ export function DashboardPage() {
             <BarChart3 className="h-5 w-5 text-amber-200" />
             <h2 className="font-display text-2xl text-white">Kasallik taqsimoti</h2>
           </div>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.topDiseases}
-                  dataKey="count"
-                  nameKey="name"
-                  innerRadius={65}
-                  outerRadius={100}
-                  paddingAngle={3}
-                >
-                  {analytics.topDiseases.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: '#0f172a',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 20,
-                    color: '#fff',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid gap-2">
-            {analytics.topDiseases.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm text-slate-200">{item.name}</span>
-                </div>
-                <span className="text-sm text-slate-400">{item.count} ta</span>
+          {analytics.topDiseases.length ? (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analytics.topDiseases}
+                      dataKey="count"
+                      nameKey="name"
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={3}
+                    >
+                      {analytics.topDiseases.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: '#0f172a',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 20,
+                        color: '#fff',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="grid gap-2">
+                {analytics.topDiseases.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm text-slate-200">{item.name}</span>
+                    </div>
+                    <span className="text-sm text-slate-400">{item.count} ta</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-sm text-slate-400">
+              Hozircha tahlil ma'lumotlari yetarli emas.
+            </div>
+          )}
         </div>
       </section>
 
@@ -186,7 +223,7 @@ export function DashboardPage() {
         <div className="glass-panel p-6">
           <div className="mb-5 flex items-center gap-3">
             <Users className="h-5 w-5 text-cyan-200" />
-            <h2 className="font-display text-2xl text-white">Foydalanuvchi faolligi</h2>
+            <h2 className="font-display text-2xl text-white">User faolligi</h2>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -211,29 +248,35 @@ export function DashboardPage() {
         <div className="glass-panel p-6">
           <div className="mb-5 flex items-center gap-3">
             <Activity className="h-5 w-5 text-emerald-200" />
-            <h2 className="font-display text-2xl text-white">So'nggi faollik</h2>
+            <h2 className="font-display text-2xl text-white">So'nggi natijalar</h2>
           </div>
           <div className="space-y-3">
-            {analytics.recentScans.map((scan) => (
-              <div
-                key={scan.id}
-                className="flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-3"
-              >
-                <img
-                  src={scan.imageSrc}
-                  alt={scan.diseaseName}
-                  className="h-16 w-16 rounded-2xl object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-white">{scan.diseaseName}</p>
-                  <p className="text-sm text-slate-400">{scan.userName}</p>
-                  <p className="text-xs text-slate-500">{formatDateTime(scan.createdAt)}</p>
+            {analytics.recentScans.length ? (
+              analytics.recentScans.map((scan) => (
+                <div
+                  key={scan.id}
+                  className="flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-3"
+                >
+                  <img
+                    src={scan.imageSrc}
+                    alt={scan.diseaseName}
+                    className="h-16 w-16 rounded-2xl object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-white">{scan.diseaseName}</p>
+                    <p className="text-sm text-slate-400">{scan.userName}</p>
+                    <p className="text-xs text-slate-500">{formatDateTime(scan.createdAt)}</p>
+                  </div>
+                  <div className="rounded-full bg-emerald-300/10 px-3 py-2 text-sm text-emerald-100">
+                    {scan.confidence}%
+                  </div>
                 </div>
-                <div className="rounded-full bg-emerald-300/10 px-3 py-2 text-sm text-emerald-100">
-                  {scan.confidence}%
-                </div>
+              ))
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-sm text-slate-400">
+                Hozircha so'nggi natijalar yo'q.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

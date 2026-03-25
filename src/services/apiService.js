@@ -5,6 +5,28 @@ const api = axios.create({
   timeout: 45000,
 })
 
+function extractErrorMessage(error) {
+  const responseMessage =
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.response?.data?.details
+
+  if (responseMessage) {
+    return responseMessage
+  }
+
+  if (error?.code === 'ECONNABORTED') {
+    return "So'rov vaqti tugadi. Iltimos, qayta urinib ko'ring."
+  }
+
+  return error?.message || "Server bilan bog'lanishda noma'lum xatolik yuz berdi."
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(new Error(extractErrorMessage(error))),
+)
+
 export const SESSION_STORAGE_KEY = 'agro_yordam_session'
 
 export function loadStoredSession() {

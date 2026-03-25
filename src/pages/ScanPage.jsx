@@ -8,49 +8,97 @@ import { analyzePlantImage } from '../services/aiService'
 import { platformService } from '../services/platformService'
 import { formatDateTime } from '../utils/format'
 
+const MAX_BATCH_IMAGES = 5
+
 export function ScanPage() {
-  const [imageSrc, setImageSrc] = useState('')
+  const [images, setImages] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [recentScans, setRecentScans] = useState([])
+  const [progress, setProgress] = useState({
+    current: 0,
+    total: 0,
+  })
   const MotionSection = motion.section
 
-  const { session, user } = useAuth()
+  const { session } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!session) {
-      return
+    async function loadRecentScans() {
+      if (!session) {
+        return
+      }
+
+      try {
+        const scans = await platformService.getUserScans(session)
+        setRecentScans(scans.slice(0, 4))
+      } catch (loadError) {
+        setError(loadError.message)
+      }
     }
-    platformService.getUserScans(session).then((scans) => {
-      setRecentScans(scans.slice(0, 4))
-    })
-  }, [session, user])
+
+    loadRecentScans()
+  }, [session])
 
   async function handleAnalyze() {
-    if (!imageSrc) {
+    if (!images.length) {
       setError("Avval barg rasmini tanlang yoki kameradan suratga oling.")
+      return
+    }
+
+    if (!session) {
+      setError("Sessiya topilmadi. Qayta login qiling.")
       return
     }
 
     setSubmitting(true)
     setError('')
+    setProgress({
+      current: 0,
+      total: images.length,
+    })
 
     try {
-      const analysis = await analyzePlantImage(imageSrc)
-      if (!session) {
-        throw new Error("Sessiya topilmadi. Qayta login qiling.")
-      }
-      const scan = await platformService.createScan(session, {
-        imageSrc,
-        analysis,
-      })
+      const createdScans = []
 
-      navigate(`/results/${scan.id}`)
+      for (const [index, imageSrc] of images.entries()) {
+        setProgress({
+          current: index + 1,
+          total: images.length,
+        })
+
+        const analysis = await analyzePlantImage(imageSrc)
+        const scan = await platformService.createScan(session, {
+          imageSrc,
+          analysis,
+        })
+
+        createdScans.push(scan)
+      }
+
+      setImages([])
+      setRecentScans((current) => [...createdScans.slice().reverse(), ...current].slice(0, 4))
+
+      if (createdScans.length === 1) {
+        navigate(`/results/${createdScans[0].id}`)
+        return
+      }
+
+      navigate('/history', {
+        state: {
+          createdCount: createdScans.length,
+          latestScanId: createdScans.at(-1)?.id ?? null,
+        },
+      })
     } catch (scanError) {
       setError(scanError.message)
     } finally {
       setSubmitting(false)
+      setProgress({
+        current: 0,
+        total: 0,
+      })
     }
   }
 
@@ -64,18 +112,24 @@ export function ScanPage() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Kasallikni aniqlash</p>
-            <h1 className="mt-3 font-display text-4xl text-white">Bargni skan qiling</h1>
+            <h1 className="mt-3 font-display text-4xl text-white">Barglarni skan qiling</h1>
           </div>
           <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
-            OpenAI Vision + fallback AI
+            OpenAI Vision + lokal fallback
           </div>
         </div>
 
-        <CameraCapture imageSrc={imageSrc} onImageChange={setImageSrc} />
+        <CameraCapture images={images} onImagesChange={setImages} maxImages={MAX_BATCH_IMAGES} />
 
         {error ? (
           <div className="mt-4 rounded-3xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
             {error}
+          </div>
+        ) : null}
+
+        {submitting && progress.total ? (
+          <div className="mt-4 rounded-[1.75rem] border border-cyan-300/20 bg-cyan-300/10 px-4 py-4 text-sm text-cyan-100">
+            {progress.current}/{progress.total} rasm tahlil qilinmoqda...
           </div>
         ) : null}
 
@@ -94,11 +148,13 @@ export function ScanPage() {
             ) : (
               <>
                 <ScanSearch className="h-4 w-4" />
-                Kasallikni aniqlash
+                {images.length > 1
+                  ? `${images.length} ta rasmni tahlil qilish`
+                  : 'Kasallikni aniqlash'}
               </>
             )}
           </button>
-          <button type="button" onClick={() => setImageSrc('')} className="button-ghost">
+          <button type="button" onClick={() => setImages([])} className="button-ghost">
             Qayta boshlash
           </button>
         </div>
@@ -112,14 +168,14 @@ export function ScanPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-400">AI oqimi</p>
-              <h2 className="mt-2 font-display text-3xl text-white">Tahlil qanday ishlaydi?</h2>
+              <h2 className="mt-2 font-display text-3xl text-white">Yangi analiz tartibi</h2>
             </div>
           </div>
           <div className="mt-6 grid gap-3">
             {[
-              "Rasm 48x48 o'lchamga tushiriladi va piksel rang balansi olinadi",
-              "OpenAI server mavjud bo'lsa multimodal tahlil ishlaydi, bo'lmasa lokal fallback yoqiladi",
-              "Natija kasallik tavsifi va davolash bo'yicha tavsiyalar bilan birga qaytadi",
+              "Rasm avtomatik siqiladi va shu sabab katta fayllar barqarorroq yuboriladi",
+              "OpenAI mavjud bo'lsa structured output bilan natija olinadi, bo'lmasa lokal fallback ishlaydi",
+              "Bir martada 5 tagacha rasm ketma-ket tahlil qilinib, natijalar tarixga saqlanadi",
             ].map((item) => (
               <div
                 key={item}

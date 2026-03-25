@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { randomUUID } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
@@ -18,7 +19,7 @@ const app = express()
 const port = Number(process.env.PORT || 8787)
 const jwtSecret = process.env.JWT_SECRET || 'agro-yordam-local-secret'
 const openaiApiKey = process.env.OPENAI_API_KEY
-const defaultModel = process.env.OPENAI_VISION_MODEL || 'gpt-5.4-mini'
+const defaultModel = process.env.OPENAI_VISION_MODEL || 'gpt-4.1-mini'
 const client = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
 
 app.use(cors())
@@ -75,7 +76,7 @@ async function authMiddleware(request, response, next) {
     request.user = mapUserRow(result.rows[0])
     next()
   } catch {
-    return response.status(401).json({ error: 'Sessiya muddati tugagan yoki noto‘g‘ri.' })
+    return response.status(401).json({ error: "Sessiya muddati tugagan yoki noto'g'ri." })
   }
 }
 
@@ -296,7 +297,7 @@ function extractJsonObject(rawText) {
   return JSON.parse(rawText.slice(start, end + 1))
 }
 
-function normalizeAnalysis(payload) {
+function normalizeAnalysis(payload, model = defaultModel) {
   const disease = getDiseaseByKey(payload.diseaseKey)
 
   return {
@@ -310,7 +311,7 @@ function normalizeAnalysis(payload) {
       ? payload.indicators.filter(Boolean).slice(0, 3)
       : ['AI tahlili yakunlandi'],
     source: 'openai',
-    model: defaultModel,
+    model,
   }
 }
 
@@ -361,12 +362,12 @@ app.post('/api/auth/register', async (request, response) => {
     const created = await query(
       `
         insert into app_users (
-          full_name, email, password_hash, role, phone, region, farm_name, status
+          id, full_name, email, password_hash, role, phone, region, farm_name, status
         )
-        values ($1,$2,$3,'user',$4,$5,$6,'active')
+        values ($1,$2,$3,$4,'user',$5,$6,$7,'active')
         returning id, full_name, email, role, phone, region, farm_name, status, created_at, updated_at, last_login_at
       `,
-      [payload.name, payload.email, passwordHash, payload.phone, payload.region, payload.farmName],
+      [randomUUID(), payload.name, payload.email, passwordHash, payload.phone, payload.region, payload.farmName],
     )
 
     const user = mapUserRow(created.rows[0])
@@ -565,12 +566,13 @@ app.post('/api/users', authMiddleware, requireAdmin, async (request, response) =
   const created = await query(
     `
       insert into app_users (
-        full_name, email, password_hash, role, phone, region, farm_name, status
+        id, full_name, email, password_hash, role, phone, region, farm_name, status
       )
-      values ($1,$2,$3,$4,$5,$6,$7,$8)
+      values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       returning id, full_name, email, role, phone, region, farm_name, status, created_at, updated_at, last_login_at
     `,
     [
+      randomUUID(),
       payload.name,
       payload.email,
       passwordHash,
@@ -721,13 +723,14 @@ app.post('/api/scans', authMiddleware, async (request, response) => {
   const created = await query(
     `
       insert into scans (
-        user_id, image_src, disease_key, disease_name, confidence, analysis_source,
+        id, user_id, image_src, disease_key, disease_name, confidence, analysis_source,
         model_used, summary, indicators
       )
-      values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)
+      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
       returning *
     `,
     [
+      randomUUID(),
       request.user.id,
       imageSrc,
       analysis.diseaseKey,
@@ -839,26 +842,71 @@ Qoidalar:
             {
               type: 'input_image',
               image_url: imageSrc,
-              detail: 'high',
+              detail: 'auto',
             },
           ],
         },
       ],
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'plant_disease_analysis',
+          strict: true,
+          schema: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              diseaseKey: {
+                type: 'string',
+                enum: [
+                  'healthy',
+                  'early_blight',
+                  'leaf_spot',
+                  'rust',
+                  'powdery_mildew',
+                  'bacterial_blight',
+                ],
+              },
+              confidence: {
+                type: 'integer',
+                minimum: 1,
+                maximum: 99,
+              },
+              summary: {
+                type: 'string',
+              },
+              indicators: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                minItems: 1,
+                maxItems: 3,
+              },
+            },
+            required: ['diseaseKey', 'confidence', 'summary', 'indicators'],
+          },
+        },
+      },
     })
 
     const parsed = extractJsonObject(aiResponse.output_text)
-    const normalized = normalizeAnalysis(parsed)
+    const normalized = normalizeAnalysis(parsed, aiResponse.model || defaultModel)
 
     return response.json(normalized)
   } catch (error) {
-    return response.status(500).json({
-      error: error instanceof Error ? error.message : "OpenAI tahlili vaqtida noma'lum xatolik.",
+    const message =
+      error instanceof Error ? error.message : "OpenAI tahlili vaqtida noma'lum xatolik."
+
+    return response.status(502).json({
+      error: `AI tahlili muvaffaqiyatsiz tugadi: ${message}`,
       code: 'OPENAI_ANALYSIS_FAILED',
     })
   }
 })
 
-app.use((error, _request, response) => {
+app.use((error, _request, response, next) => {
+  void next
   console.error('Unhandled API error:', error)
   response.status(500).json({
     error: error instanceof Error ? error.message : "Serverda noma'lum xatolik yuz berdi.",

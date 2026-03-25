@@ -8,7 +8,7 @@ import {
   Waves,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { DISEASES } from '../data/diseases'
 import { platformService } from '../services/platformService'
@@ -50,8 +50,14 @@ export function HomePage() {
     if (!session) {
       return
     }
-    platformService.getAnalytics(session).then(setAnalytics)
+    platformService.getAnalytics(session).then(setAnalytics).catch(() => {
+      setAnalytics(null)
+    })
   }, [session])
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="space-y-10 pb-8">

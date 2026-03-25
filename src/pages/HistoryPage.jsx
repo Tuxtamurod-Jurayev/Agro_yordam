@@ -1,6 +1,6 @@
 import { Clock3, ScanSearch, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { platformService } from '../services/platformService'
 import { formatDateTime } from '../utils/format'
@@ -8,13 +8,28 @@ import { formatDateTime } from '../utils/format'
 export function HistoryPage() {
   const [scans, setScans] = useState([])
   const [search, setSearch] = useState('')
+  const [error, setError] = useState('')
   const { session } = useAuth()
+  const location = useLocation()
+  const createdCount = location.state?.createdCount ?? 0
+  const latestScanId = location.state?.latestScanId ?? null
 
   useEffect(() => {
-    if (!session) {
-      return
+    async function loadScans() {
+      if (!session) {
+        return
+      }
+
+      try {
+        setError('')
+        const nextScans = await platformService.getUserScans(session, search ? { search } : {})
+        setScans(nextScans)
+      } catch (loadError) {
+        setError(loadError.message)
+      }
     }
-    platformService.getUserScans(session, search ? { search } : {}).then(setScans)
+
+    loadScans()
   }, [search, session])
 
   return (
@@ -36,6 +51,23 @@ export function HistoryPage() {
           />
         </label>
       </section>
+
+      {createdCount ? (
+        <section className="rounded-[2rem] border border-emerald-300/20 bg-emerald-300/10 px-6 py-5 text-sm text-emerald-100">
+          {createdCount} ta rasm muvaffaqiyatli tahlil qilindi va tarixga saqlandi.
+          {latestScanId ? (
+            <Link to={`/results/${latestScanId}`} className="ml-2 underline decoration-emerald-200/60 underline-offset-4">
+              Oxirgi natijani ochish
+            </Link>
+          ) : null}
+        </section>
+      ) : null}
+
+      {error ? (
+        <section className="rounded-[2rem] border border-rose-400/30 bg-rose-400/10 px-6 py-5 text-sm text-rose-100">
+          {error}
+        </section>
+      ) : null}
 
       {scans.length ? (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -1,5 +1,35 @@
-import { Camera, ImageUp, RefreshCcw, ScanSearch, Smartphone, XCircle } from 'lucide-react'
+import { Camera, ImageUp, RefreshCcw, ScanSearch, Smartphone, Trash2, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+
+const MAX_DIMENSION = 1600
+const JPEG_QUALITY = 0.86
+
+function stopStream(stream) {
+  stream?.getTracks().forEach((track) => track.stop())
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error("Rasmni o'qib bo'lmadi."))
+    image.src = dataUrl
+  })
+}
+
+async function compressImage(dataUrl) {
+  const image = await loadImage(dataUrl)
+  const canvas = document.createElement('canvas')
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(image.width, image.height))
+
+  canvas.width = Math.max(1, Math.round(image.width * scale))
+  canvas.height = Math.max(1, Math.round(image.height * scale))
+
+  const context = canvas.getContext('2d')
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+  return canvas.toDataURL('image/jpeg', JPEG_QUALITY)
+}
 
 function readFile(file) {
   return new Promise((resolve, reject) => {
@@ -10,11 +40,7 @@ function readFile(file) {
   })
 }
 
-function stopStream(stream) {
-  stream?.getTracks().forEach((track) => track.stop())
-}
-
-export function CameraCapture({ imageSrc, onImageChange }) {
+export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
   const videoRef = useRef(null)
   const fileInputRef = useRef(null)
   const streamRef = useRef(null)
@@ -22,15 +48,28 @@ export function CameraCapture({ imageSrc, onImageChange }) {
   const [cameraOpen, setCameraOpen] = useState(false)
   const [error, setError] = useState('')
 
+  const imageCount = images.length
+  const hasReachedLimit = imageCount >= maxImages
+  const primaryImage = images[0] ?? ''
+
   useEffect(() => {
     return () => {
       stopStream(streamRef.current)
     }
   }, [])
 
+  function applyImages(nextImages) {
+    onImagesChange(nextImages.slice(0, maxImages))
+  }
+
   async function handleStartCamera() {
+    if (hasReachedLimit) {
+      setError(`Bir martada ${maxImages} tagacha rasm yuklash mumkin.`)
+      return
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Brauzer kamerani qo‘llab-quvvatlamaydi. Fayl yuklashdan foydalaning.')
+      setError("Brauzer kamerani qo'llab-quvvatlamaydi. Fayl yuklashdan foydalaning.")
       return
     }
 
@@ -61,8 +100,13 @@ export function CameraCapture({ imageSrc, onImageChange }) {
     streamRef.current = null
   }
 
-  function handleCapture() {
+  async function handleCapture() {
     if (!videoRef.current) {
+      return
+    }
+
+    if (hasReachedLimit) {
+      setError(`Bir martada ${maxImages} tagacha rasm yuklash mumkin.`)
       return
     }
 
@@ -72,49 +116,94 @@ export function CameraCapture({ imageSrc, onImageChange }) {
 
     const context = canvas.getContext('2d')
     context.drawImage(videoRef.current, 0, 0)
-    onImageChange(canvas.toDataURL('image/jpeg', 0.92))
+
+    const compressed = await compressImage(canvas.toDataURL('image/jpeg', 0.92))
+    applyImages([...images, compressed])
+    setError('')
     handleStopCamera()
   }
 
   async function handleFileChange(event) {
-    const file = event.target.files?.[0]
+    const fileList = Array.from(event.target.files || [])
+    const remainingSlots = maxImages - images.length
 
-    if (!file) {
+    if (!fileList.length) {
+      event.target.value = ''
       return
     }
 
-    const dataUrl = await readFile(file)
-    onImageChange(dataUrl)
+    if (remainingSlots <= 0) {
+      setError(`Bir martada ${maxImages} tagacha rasm yuklash mumkin.`)
+      event.target.value = ''
+      return
+    }
+
+    try {
+      const acceptedFiles = fileList.slice(0, remainingSlots)
+      const nextImages = await Promise.all(
+        acceptedFiles.map(async (file) => compressImage(await readFile(file))),
+      )
+
+      applyImages([...images, ...nextImages])
+
+      if (fileList.length > remainingSlots) {
+        setError(`Faqat ${maxImages} ta rasm saqlandi. Qolganlari o'tkazib yuborildi.`)
+      } else {
+        setError('')
+      }
+    } catch (fileError) {
+      setError(fileError.message)
+    } finally {
+      // Bir xil fayl qayta tanlanganda ham `change` hodisasi ishlashi uchun reset qilamiz.
+      event.target.value = ''
+    }
+  }
+
+  function handleRemoveImage(index) {
+    applyImages(images.filter((_item, itemIndex) => itemIndex !== index))
     setError('')
+  }
+
+  function handleReset() {
+    applyImages([])
+    setError('')
+    handleStopCamera()
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={handleStartCamera} className="button-primary">
-          <Camera className="h-4 w-4" />
-          Kamerani yoqish
-        </button>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="button-ghost"
-        >
-          <ImageUp className="h-4 w-4" />
-          Fayl yuklash
-        </button>
-        {imageSrc ? (
-          <button type="button" onClick={() => onImageChange('')} className="button-ghost">
-            <RefreshCcw className="h-4 w-4" />
-            Qayta tanlash
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-3">
+          <button type="button" onClick={handleStartCamera} className="button-primary">
+            <Camera className="h-4 w-4" />
+            Kamerani yoqish
           </button>
-        ) : null}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="button-ghost"
+          >
+            <ImageUp className="h-4 w-4" />
+            Rasmlarni yuklash
+          </button>
+          {imageCount ? (
+            <button type="button" onClick={handleReset} className="button-ghost">
+              <RefreshCcw className="h-4 w-4" />
+              Tozalash
+            </button>
+          ) : null}
+        </div>
+
+        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
+          {imageCount}/{maxImages} rasm tanlandi
+        </div>
       </div>
 
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={handleFileChange}
       />
@@ -147,18 +236,14 @@ export function CameraCapture({ imageSrc, onImageChange }) {
             </div>
           </div>
           <p className="text-sm text-slate-400">
-            Kamera ochilgach bargni markazga olib kelib, yetarli yorug‘likda suratga oling.
+            Kamera ochilgach bargni markazga olib kelib, yetarli yorug'likda suratga oling.
           </p>
         </div>
       ) : null}
 
       <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt="Tanlangan barg rasmi"
-            className="aspect-[4/3] w-full object-cover"
-          />
+        {primaryImage ? (
+          <img src={primaryImage} alt="Tanlangan barg rasmi" className="aspect-[4/3] w-full object-cover" />
         ) : (
           <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.18),_transparent_40%),linear-gradient(135deg,_rgba(15,23,42,0.95),_rgba(30,41,59,0.82))] p-8 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-300/15 ring-1 ring-emerald-300/30">
@@ -166,15 +251,40 @@ export function CameraCapture({ imageSrc, onImageChange }) {
             </div>
             <div className="space-y-2">
               <p className="font-display text-2xl text-white">
-                Kamera yoki surat yuklash orqali tahlil boshlang
+                5 tagacha barg rasmini yuklab tahlilni boshlang
               </p>
               <p className="mx-auto max-w-md text-sm text-slate-300">
-                Lokal AI bargdagi rang va tekstura ko‘rsatkichlarini tahlil qilib, ehtimoliy kasallikni aniqlaydi.
+                Har bir rasm avtomatik siqiladi va ketma-ket AI tahlilidan o'tadi. Bu yuklashni
+                barqaror qiladi va bir xil faylni qayta tanlash muammosini ham hal qiladi.
               </p>
             </div>
           </div>
         )}
       </div>
+
+      {images.length ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {images.map((image, index) => (
+            <div
+              key={`${image.slice(0, 48)}-${index}`}
+              className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5"
+            >
+              <img src={image} alt={`Tanlangan rasm ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-slate-300">Rasm {index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="inline-flex items-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-100 transition hover:bg-rose-400/15"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Olib tashlash
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
