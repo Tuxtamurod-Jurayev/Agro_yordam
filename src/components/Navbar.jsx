@@ -12,6 +12,7 @@ import {
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isNativeApp } from '../services/runtime'
 import { roleLabel } from '../utils/format'
 
 export function Navbar() {
@@ -19,8 +20,9 @@ export function Navbar() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
-  const brandTarget = isAdmin ? '/dashboard' : '/'
-  const navLinks = isAdmin
+  const showAdminNavigation = isAdmin && !isNativeApp
+  const brandTarget = showAdminNavigation ? '/dashboard' : '/'
+  const navLinks = showAdminNavigation
     ? [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tone: 'admin' },
         { to: '/scan', label: 'Skaner', icon: ScanLine },

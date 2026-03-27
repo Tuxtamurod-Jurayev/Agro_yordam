@@ -2,6 +2,7 @@ import { LoaderCircle, LogIn, ShieldCheck, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isNativeApp } from '../services/runtime'
 
 const loginDefaults = {
   email: '',
@@ -67,6 +68,15 @@ export function AuthPage() {
             </p>
           </div>
         </div>
+
+        {isNativeApp ? (
+          <div className="mt-4 rounded-[1.75rem] border border-amber-300/25 bg-amber-300/10 p-5">
+            <p className="text-sm leading-7 text-amber-100">
+              APK ilova oddiy foydalanuvchilar uchun tayyorlangan. Admin monitoring paneli faqat
+              web versiyada ishlaydi.
+            </p>
+          </div>
+        ) : null}
       </section>
 
       <section className="glass-panel p-8 sm:p-10">

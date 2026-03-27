@@ -1,8 +1,20 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, startTransition, useContext, useEffect, useState } from 'react'
 import { platformService } from '../services/platformService'
+import { isNativeApp } from '../services/runtime'
 
 const AuthContext = createContext(null)
+const mobileAdminMessage =
+  "Admin panel faqat web versiyada ishlaydi. APK oddiy foydalanuvchilar uchun mo'ljallangan."
+
+async function ensureSupportedSession(nextSession) {
+  if (isNativeApp && nextSession?.user?.role === 'admin') {
+    await platformService.signOut()
+    throw new Error(mobileAdminMessage)
+  }
+
+  return nextSession
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -13,7 +25,7 @@ export function AuthProvider({ children }) {
 
     async function hydrateSession() {
       try {
-        const nextSession = await platformService.getSession()
+        const nextSession = await ensureSupportedSession(await platformService.getSession())
 
         if (!mounted) {
           return
@@ -38,13 +50,13 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function signIn(payload) {
-    const nextSession = await platformService.signIn(payload)
+    const nextSession = await ensureSupportedSession(await platformService.signIn(payload))
     setSession(nextSession)
     return nextSession
   }
 
   async function signUp(payload) {
-    const nextSession = await platformService.signUp(payload)
+    const nextSession = await ensureSupportedSession(await platformService.signUp(payload))
     setSession(nextSession)
     return nextSession
   }
@@ -55,13 +67,13 @@ export function AuthProvider({ children }) {
   }
 
   async function refreshSession() {
-    const nextSession = await platformService.refreshCurrentUser(session)
+    const nextSession = await ensureSupportedSession(await platformService.refreshCurrentUser(session))
     setSession(nextSession)
     return nextSession
   }
 
   async function updateProfile(payload) {
-    const nextSession = await platformService.updateOwnProfile(session, payload)
+    const nextSession = await ensureSupportedSession(await platformService.updateOwnProfile(session, payload))
     setSession(nextSession)
     return nextSession
   }
