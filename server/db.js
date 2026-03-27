@@ -4,6 +4,7 @@ import { newDb } from 'pg-mem'
 import { Pool } from 'pg'
 import { DISEASES } from '../src/data/diseases.js'
 
+const fallbackAdminId = process.env.ADMIN_USER_ID || '00000000-0000-4000-8000-000000000001'
 const connectionCandidates = [
   process.env.SUPABASE_SESSION_POOLER_URL,
   process.env.SUPABASE_POOLER_URL,
@@ -12,12 +13,6 @@ const connectionCandidates = [
 let pool = null
 let databaseMode = 'uninitialized'
 let databaseConnectionError = null
-
-if (!connectionCandidates.length) {
-  throw new Error(
-    "DATABASE_URL topilmadi. .env ichida Supabase session pooler yoki boshqa Postgres connection string kiriting.",
-  )
-}
 
 function createRemotePool(connectionString) {
   return new Pool({
@@ -53,6 +48,15 @@ function createMemoryPool() {
 
 export async function initializeDatabaseConnection() {
   if (pool) {
+    return databaseMode
+  }
+
+  if (!connectionCandidates.length) {
+    databaseConnectionError =
+      "DATABASE_URL topilmadi. .env ichida Supabase session pooler yoki boshqa Postgres connection string kiriting."
+    console.warn('Remote database sozlanmagan, pg-mem fallback yoqildi:', databaseConnectionError)
+    pool = createMemoryPool()
+    databaseMode = 'pg-mem-fallback'
     return databaseMode
   }
 
@@ -302,7 +306,7 @@ export async function ensureDatabaseSetup() {
         insert into app_users (id, full_name, email, password_hash, role, status)
         values ($1, $2, $3, $4, 'admin', 'active')
       `,
-      [randomUUID(), adminName, adminEmail, passwordHash],
+      [fallbackAdminId, adminName, adminEmail, passwordHash],
     )
     return
   }
