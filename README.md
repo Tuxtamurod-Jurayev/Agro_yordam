@@ -122,3 +122,18 @@ Remote repo:
 - Project URL: `https://txbniapddbhaumqbqevw.supabase.co`
 
 Server start vaqtida kerakli jadval va seedlar avtomatik yaratiladi.
+
+
+
+
+
+
+
+
+
+1. dasturda faqat admin web app da kira olsin 
+2. user foydalanuvchilar apk filelidan foydalanishlari kerak boladi
+3. barcha hatoliklarni va .apk filedagi buglarni to'g'irla va menga jonat 
+4.  tizimni barcha qisimlarni boshqattan ko'rb chiq va optimal holatga keltir har haqan android qurulmalari uchun tizim qurayotganimizni esingda chiqarma va dzayinga o'zgatirish kiritish kerak emas 
+5.  Menga shu yerda apk file tayyor holatga keltir har qanday qoshimcha dastur yoki toolslar o'rnatishing mumkin
+men senga ishonaman  sen buni uddalaysan
