@@ -50,7 +50,7 @@ export function AuthPage() {
     <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.92fr_1.08fr]">
       <section className="glass-panel p-8 sm:p-10">
         <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Kirish paneli</p>
-        <h1 className="mt-4 font-display text-4xl leading-tight text-white">
+        <h1 className="mt-4 font-display text-3xl leading-tight text-white sm:text-4xl">
           Tizimga kirib, barg tahlilini boshlang
         </h1>
         <p className="mt-4 text-sm leading-7 text-slate-300">
@@ -70,11 +70,11 @@ export function AuthPage() {
       </section>
 
       <section className="glass-panel p-8 sm:p-10">
-        <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-2">
+        <div className="grid grid-cols-2 rounded-full border border-white/10 bg-white/5 p-2">
           <button
             type="button"
             onClick={() => setMode('login')}
-            className={`rounded-full px-5 py-2 text-sm transition ${
+            className={`rounded-full px-4 py-2 text-center text-sm transition sm:px-5 ${
               mode === 'login'
                 ? 'bg-white text-slate-950'
                 : 'text-slate-300 hover:text-white'
@@ -85,7 +85,7 @@ export function AuthPage() {
           <button
             type="button"
             onClick={() => setMode('register')}
-            className={`rounded-full px-5 py-2 text-sm transition ${
+            className={`rounded-full px-4 py-2 text-center text-sm transition sm:px-5 ${
               mode === 'register'
                 ? 'bg-white text-slate-950'
                 : 'text-slate-300 hover:text-white'

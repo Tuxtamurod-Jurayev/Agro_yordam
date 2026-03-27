@@ -99,7 +99,7 @@ export function ResultPage() {
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Aniqlangan natija</p>
-            <h1 className="mt-2 font-display text-4xl text-white">{scan.diseaseName}</h1>
+            <h1 className="mt-2 font-display text-3xl text-white sm:text-4xl">{scan.diseaseName}</h1>
             <p className="mt-2 text-sm text-slate-300">{formatDateTime(scan.createdAt)}</p>
           </div>
           <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-300/10 px-5 py-4 text-center">
@@ -142,11 +142,11 @@ export function ResultPage() {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link to="/scan" className="button-primary">
+        <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+          <Link to="/scan" className="button-primary w-full justify-center sm:w-auto">
             Yangi scan
           </Link>
-          <Link to="/history" className="button-ghost">
+          <Link to="/history" className="button-ghost w-full justify-center sm:w-auto">
             Tarixga qaytish
             <ArrowRight className="h-4 w-4" />
           </Link>

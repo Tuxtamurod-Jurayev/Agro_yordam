@@ -33,6 +33,33 @@ Ochish:
 - Frontend: `http://localhost:5173`
 - API server: `http://127.0.0.1:8787`
 
+## Mobil APK
+
+Loyiha oddiy foydalanuvchilar uchun Android APK yo'liga tayyorlandi:
+
+- Mobil wrapper: Capacitor
+- Native build paytida API manzili: `VITE_MOBILE_API_BASE_URL`
+- Standart mobile API: `https://agro-yordam.vercel.app`
+
+Tayyorlash buyruqlari:
+
+```bash
+npm install
+npm run mobile:sync
+npm run mobile:open
+```
+
+Android Studio ichida:
+
+1. `Build > Build Bundle(s) / APK(s) > Build APK(s)`
+2. Yoki `Generate Signed Bundle / APK` orqali release APK chiqaring
+
+Eslatma:
+
+- Hozirgi muhitda Java/Gradle/Android SDK yo'qligi sabab bu yerning o'zida `.apk` faylni final build qilib bera olmadim.
+- Lekin kod, Capacitor config va Android sync oqimi APK chiqarishga tayyor holatga keltirildi.
+- Mobil ilova ichida `/api` so'rovlari adashib lokalga ketmasligi uchun native rejimda production API avtomatik ishlatiladi.
+
 ## Muhit fayli
 
 Lokal ishga tushirish uchun `.env` tayyorlangan. Agar boshqa serverga ko'chirsangiz:

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { getDiseaseByKey } from '../data/diseases'
+import { toApiUrl } from './runtime'
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
@@ -148,7 +149,7 @@ async function runLocalClassifier(imageSrc) {
 
 async function runOpenAiProxy(imageSrc) {
   const { data } = await axios.post(
-    '/api/analyze-plant',
+    toApiUrl('/api/analyze-plant'),
     { imageSrc },
     {
       timeout: 45000,

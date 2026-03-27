@@ -112,7 +112,7 @@ export function ScanPage() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Kasallikni aniqlash</p>
-            <h1 className="mt-3 font-display text-4xl text-white">Barglarni skan qiling</h1>
+            <h1 className="mt-3 font-display text-3xl text-white sm:text-4xl">Barglarni skan qiling</h1>
           </div>
           <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
             OpenAI Vision + lokal fallback
@@ -133,12 +133,12 @@ export function ScanPage() {
           </div>
         ) : null}
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={handleAnalyze}
             disabled={submitting}
-            className="button-primary"
+            className="button-primary w-full justify-center sm:w-auto"
           >
             {submitting ? (
               <>
@@ -154,7 +154,11 @@ export function ScanPage() {
               </>
             )}
           </button>
-          <button type="button" onClick={() => setImages([])} className="button-ghost">
+          <button
+            type="button"
+            onClick={() => setImages([])}
+            className="button-ghost w-full justify-center sm:w-auto"
+          >
             Qayta boshlash
           </button>
         </div>

@@ -11,11 +11,17 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start:server": "node server/index.js",
+    "mobile:build": "npm run build",
+    "mobile:sync": "npm run build && npx cap sync android",
+    "mobile:open": "npx cap open android",
     "supabase:login": "npx supabase login",
     "supabase:init": "node -e \"const fs=require('fs'); const cp=require('child_process'); if (fs.existsSync('supabase/config.toml')) { console.log('Supabase already initialized.'); } else { cp.execSync('npx supabase init', { stdio: 'inherit' }); }\"",
     "supabase:link": "npx supabase link --project-ref txbniapddbhaumqbqevw"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
     "@supabase/supabase-js": "^2.99.3",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",

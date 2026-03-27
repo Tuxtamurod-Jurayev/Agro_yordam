@@ -106,7 +106,7 @@ export function AccountPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Account</p>
-              <h1 className="mt-2 font-display text-4xl text-white">Profil boshqaruvi</h1>
+              <h1 className="mt-2 font-display text-3xl text-white sm:text-4xl">Profil boshqaruvi</h1>
               <p className="mt-3 text-sm leading-7 text-slate-300">
                 Ism, email va xo'jalik ma'lumotlarini yangilashingiz mumkin.
               </p>
@@ -181,7 +181,7 @@ export function AccountPage() {
             ) : null}
 
             <div className="md:col-span-2">
-              <button type="submit" disabled={savingProfile} className="button-primary">
+              <button type="submit" disabled={savingProfile} className="button-primary w-full justify-center sm:w-auto">
                 {savingProfile ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -244,7 +244,7 @@ export function AccountPage() {
               />
             </label>
             <div className="md:col-span-2">
-              <button type="submit" disabled={savingPassword} className="button-primary">
+              <button type="submit" disabled={savingPassword} className="button-primary w-full justify-center sm:w-auto">
                 {savingPassword ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -303,7 +303,7 @@ export function AccountPage() {
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="mt-6 inline-flex items-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-5 py-3 text-sm font-medium text-rose-100 transition hover:bg-rose-400/15"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-5 py-3 text-sm font-medium text-rose-100 transition hover:bg-rose-400/15 sm:w-auto"
               >
                 {deleting ? (
                   <>

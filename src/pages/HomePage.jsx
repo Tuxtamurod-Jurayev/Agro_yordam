@@ -75,7 +75,7 @@ export function HomePage() {
           </div>
 
           <div className="max-w-3xl space-y-6">
-            <h1 className="font-display text-4xl leading-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="font-display text-3xl leading-tight text-white sm:text-5xl lg:text-6xl">
               O'simlik kasalliklarini aniqlash va monitoringni bir joyda boshqaring
             </h1>
             <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
@@ -85,12 +85,12 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to={user ? '/scan' : '/auth'} className="button-primary">
+          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+            <Link to={user ? '/scan' : '/auth'} className="button-primary w-full justify-center sm:w-auto">
               <Camera className="h-4 w-4" />
               {user ? "Skan qilishni boshlash" : 'Kirish va boshlash'}
             </Link>
-            <Link to="/history" className="button-ghost">
+            <Link to="/history" className="button-ghost w-full justify-center sm:w-auto">
               Oxirgi natijalarni ko'rish
               <ArrowRight className="h-4 w-4" />
             </Link>

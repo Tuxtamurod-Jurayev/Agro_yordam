@@ -1,0 +1,9 @@
+{
+  "appId": "uz.agroyordam.mobile",
+  "appName": "Agro Yordam",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false
+  }
+}

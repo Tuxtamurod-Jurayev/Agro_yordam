@@ -173,28 +173,36 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={handleStartCamera} className="button-primary">
+        <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
+          <button
+            type="button"
+            onClick={handleStartCamera}
+            className="button-primary w-full justify-center sm:w-auto"
+          >
             <Camera className="h-4 w-4" />
             Kamerani yoqish
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="button-ghost"
+            className="button-ghost w-full justify-center sm:w-auto"
           >
             <ImageUp className="h-4 w-4" />
             Rasmlarni yuklash
           </button>
           {imageCount ? (
-            <button type="button" onClick={handleReset} className="button-ghost">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="button-ghost w-full justify-center sm:w-auto"
+            >
               <RefreshCcw className="h-4 w-4" />
               Tozalash
             </button>
           ) : null}
         </div>
 
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
+        <div className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center text-sm text-slate-300 sm:w-auto">
           {imageCount}/{maxImages} rasm tanlandi
         </div>
       </div>
@@ -203,6 +211,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         multiple
         className="hidden"
         onChange={handleFileChange}
@@ -218,17 +227,25 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
         <div className="space-y-4 rounded-[2rem] border border-white/10 bg-slate-950/80 p-4">
           <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900">
             <video ref={videoRef} autoPlay playsInline muted className="aspect-video w-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-slate-950/90 to-transparent px-4 pb-4 pt-12">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-slate-950/90 to-transparent px-4 pb-4 pt-12 sm:flex-row sm:items-center sm:justify-between">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs text-white">
                 <Smartphone className="h-4 w-4 text-emerald-300" />
                 Kamera jonli rejim
               </span>
-              <div className="flex gap-2">
-                <button type="button" onClick={handleStopCamera} className="button-ghost">
+              <div className="grid gap-2 sm:flex">
+                <button
+                  type="button"
+                  onClick={handleStopCamera}
+                  className="button-ghost w-full justify-center sm:w-auto"
+                >
                   <XCircle className="h-4 w-4" />
                   Bekor qilish
                 </button>
-                <button type="button" onClick={handleCapture} className="button-primary">
+                <button
+                  type="button"
+                  onClick={handleCapture}
+                  className="button-primary w-full justify-center sm:w-auto"
+                >
                   <ScanSearch className="h-4 w-4" />
                   Rasm olish
                 </button>
@@ -270,12 +287,12 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
               className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5"
             >
               <img src={image} alt={`Tanlangan rasm ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
-              <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm text-slate-300">Rasm {index + 1}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(index)}
-                  className="inline-flex items-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-100 transition hover:bg-rose-400/15"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-100 transition hover:bg-rose-400/15 sm:w-auto"
                 >
                   <Trash2 className="h-4 w-4" />
                   Olib tashlash
