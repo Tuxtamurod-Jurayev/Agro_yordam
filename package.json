@@ -10,7 +10,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start:server": "node server/index.js"
+    "start:server": "node server/index.js",
+    "supabase:login": "npx supabase login",
+    "supabase:init": "node -e \"const fs=require('fs'); const cp=require('child_process'); if (fs.existsSync('supabase/config.toml')) { console.log('Supabase already initialized.'); } else { cp.execSync('npx supabase init', { stdio: 'inherit' }); }\"",
+    "supabase:link": "npx supabase link --project-ref txbniapddbhaumqbqevw"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.3",

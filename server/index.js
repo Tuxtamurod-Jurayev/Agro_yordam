@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { createHash, randomUUID } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
@@ -8,6 +9,7 @@ import OpenAI from 'openai'
 import { DISEASES, getDiseaseByKey } from '../src/data/diseases.js'
 import {
   ensureDatabaseSetup,
+  getDatabaseConnectionError,
   getDatabaseMode,
   initializeDatabaseConnection,
   mapScanRow,
@@ -17,6 +19,7 @@ import {
 
 const app = express()
 const port = Number(process.env.PORT || 8787)
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url)
 const jwtSecret = process.env.JWT_SECRET || 'agro-yordam-local-secret'
 const openaiApiKey = process.env.OPENAI_API_KEY
 const defaultModel = process.env.OPENAI_VISION_MODEL || 'gpt-4.1-mini'
@@ -443,6 +446,7 @@ app.get('/api/health', async (_request, response) => {
       configured: Boolean(openaiApiKey),
       model: defaultModel,
       database: getDatabaseMode(),
+      databaseError: getDatabaseConnectionError(),
       date: new Date().toISOString(),
     })
   } catch (error) {
@@ -1032,15 +1036,36 @@ app.use((error, _request, response, next) => {
   })
 })
 
-async function start() {
+export async function initializeApp() {
   await initializeDatabaseConnection()
   await ensureDatabaseSetup()
+  return app
+}
+
+export const appReady = initializeApp()
+export default app
+
+async function start() {
+  await appReady
   app.listen(port, '127.0.0.1', () => {
     console.log(`AgroYordam server running on http://127.0.0.1:${port}`)
+    if (getDatabaseMode() === 'pg-mem-fallback' && getDatabaseConnectionError()) {
+      console.log(`Database fallback reason: ${getDatabaseConnectionError()}`)
+    }
   })
 }
 
-start().catch((error) => {
-  console.error('Server startup failed:', error)
-  process.exit(1)
+appReady.catch((error) => {
+  console.error('Server bootstrap failed:', error)
+
+  if (isDirectRun) {
+    process.exit(1)
+  }
 })
+
+if (isDirectRun) {
+  start().catch((error) => {
+    console.error('Server startup failed:', error)
+    process.exit(1)
+  })
+}

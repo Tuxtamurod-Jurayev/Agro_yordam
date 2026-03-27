@@ -4,17 +4,24 @@ import { newDb } from 'pg-mem'
 import { Pool } from 'pg'
 import { DISEASES } from '../src/data/diseases.js'
 
-const databaseUrl = process.env.DATABASE_URL
+const connectionCandidates = [
+  process.env.SUPABASE_SESSION_POOLER_URL,
+  process.env.SUPABASE_POOLER_URL,
+  process.env.DATABASE_URL,
+].filter(Boolean)
 let pool = null
 let databaseMode = 'uninitialized'
+let databaseConnectionError = null
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL topilmadi. .env ichida Supabase connection string kiriting.')
+if (!connectionCandidates.length) {
+  throw new Error(
+    "DATABASE_URL topilmadi. .env ichida Supabase session pooler yoki boshqa Postgres connection string kiriting.",
+  )
 }
 
-function createRemotePool() {
+function createRemotePool(connectionString) {
   return new Pool({
-    connectionString: databaseUrl,
+    connectionString,
     ssl: {
       rejectUnauthorized: false,
     },
@@ -49,22 +56,38 @@ export async function initializeDatabaseConnection() {
     return databaseMode
   }
 
-  try {
-    const remotePool = createRemotePool()
-    await remotePool.query('select 1')
-    pool = remotePool
-    databaseMode = 'supabase-postgres'
-  } catch (error) {
-    console.warn('Supabase Postgres ulanishi amalga oshmadi, pg-mem fallback yoqildi:', error.message)
-    pool = createMemoryPool()
-    databaseMode = 'pg-mem-fallback'
+  const failures = []
+
+  for (const connectionString of connectionCandidates) {
+    try {
+      const remotePool = createRemotePool(connectionString)
+      await remotePool.query('select 1')
+      pool = remotePool
+      databaseMode = 'supabase-postgres'
+      databaseConnectionError = null
+      return databaseMode
+    } catch (error) {
+      failures.push(formatConnectionError(connectionString, error))
+    }
   }
+
+  databaseConnectionError = failures.join(' | ')
+  console.warn(
+    'Supabase Postgres ulanishi amalga oshmadi, pg-mem fallback yoqildi:',
+    databaseConnectionError,
+  )
+  pool = createMemoryPool()
+  databaseMode = 'pg-mem-fallback'
 
   return databaseMode
 }
 
 export function getDatabaseMode() {
   return databaseMode
+}
+
+export function getDatabaseConnectionError() {
+  return databaseConnectionError
 }
 
 export async function query(text, params = []) {
@@ -260,10 +283,20 @@ export async function ensureDatabaseSetup() {
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@agro-yordam.uz').toLowerCase()
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
   const adminName = process.env.ADMIN_NAME || 'Agro Admin'
-  const existingAdmin = await query('select id from app_users where email = $1 limit 1', [adminEmail])
+
+  const existingAdmin = await query(
+    `
+      select id, full_name, password_hash, role, status
+      from app_users
+      where email = $1
+      limit 1
+    `,
+    [adminEmail],
+  )
+
+  const passwordHash = await bcrypt.hash(adminPassword, 12)
 
   if (!existingAdmin.rowCount) {
-    const passwordHash = await bcrypt.hash(adminPassword, 12)
     await query(
       `
         insert into app_users (id, full_name, email, password_hash, role, status)
@@ -271,5 +304,49 @@ export async function ensureDatabaseSetup() {
       `,
       [randomUUID(), adminName, adminEmail, passwordHash],
     )
+    return
+  }
+
+  const row = existingAdmin.rows[0]
+  const passwordMatches = await bcrypt.compare(adminPassword, row.password_hash).catch(() => false)
+  const shouldSyncAdmin =
+    row.full_name !== adminName ||
+    row.role !== 'admin' ||
+    row.status !== 'active' ||
+    !passwordMatches
+
+  if (shouldSyncAdmin) {
+    await query(
+      `
+        update app_users
+        set full_name = $1, password_hash = $2, role = 'admin', status = 'active', updated_at = now()
+        where id = $3
+      `,
+      [adminName, passwordHash, row.id],
+    )
+  }
+}
+
+function formatConnectionError(connectionString, error) {
+  const target = safeConnectionTarget(connectionString)
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (
+    target.includes('db.') &&
+    target.includes('.supabase.co') &&
+    ['ENOTFOUND', 'EAI_AGAIN'].includes(error?.code)
+  ) {
+    return `${target}: ${message}. Supabase direct DB host ko'pincha IPv6 bo'ladi; IPv4 tarmoqda Supabase Connect sahifasidagi session pooler URL'dan foydalaning.`
+  }
+
+  return `${target}: ${message}`
+}
+
+function safeConnectionTarget(connectionString) {
+  try {
+    const target = new URL(connectionString)
+    return `${target.hostname}:${target.port || '5432'}`
+  } catch {
+    return 'unknown-database-target'
   }
 }
