@@ -39,6 +39,9 @@ jobs:
       - name: Copy web assets into Android project
         run: npx cap copy android
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
