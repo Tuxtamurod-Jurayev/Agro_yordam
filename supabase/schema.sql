@@ -45,6 +45,21 @@ create table if not exists scans (
   created_at timestamptz not null default now()
 );
 
+create table if not exists ai_analysis_cache (
+  id uuid primary key default gen_random_uuid(),
+  image_hash text unique not null,
+  disease_key text not null,
+  disease_name text not null,
+  confidence integer not null check (confidence >= 1 and confidence <= 99),
+  summary text,
+  indicators jsonb not null default '[]'::jsonb,
+  source text not null default 'openai',
+  model_used text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_scans_user_created_at on scans(user_id, created_at desc);
 create index if not exists idx_scans_disease_name on scans(disease_name);
 create index if not exists idx_users_email on app_users(email);
+create index if not exists idx_ai_analysis_cache_hash on ai_analysis_cache(image_hash);

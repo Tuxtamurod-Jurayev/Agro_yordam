@@ -1,5 +1,14 @@
-import { Activity, BarChart3, Leaf, LoaderCircle, ShieldCheck, Users } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  Activity,
+  BarChart3,
+  LoaderCircle,
+  RefreshCcw,
+  ShieldCheck,
+  UserCheck,
+  UserX,
+  Users,
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -23,24 +32,28 @@ export function DashboardPage() {
   const { session } = useAuth()
   const [analytics, setAnalytics] = useState(null)
   const [error, setError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    async function loadAnalytics() {
-      if (!session) {
-        return
-      }
-
-      try {
-        setError('')
-        const nextAnalytics = await platformService.getAnalytics(session)
-        setAnalytics(nextAnalytics)
-      } catch (loadError) {
-        setError(loadError.message)
-      }
+  const loadAnalytics = useCallback(async () => {
+    if (!session) {
+      return
     }
 
-    loadAnalytics()
+    try {
+      setRefreshing(true)
+      setError('')
+      const nextAnalytics = await platformService.getAnalytics(session)
+      setAnalytics(nextAnalytics)
+    } catch (loadError) {
+      setError(loadError.message)
+    } finally {
+      setRefreshing(false)
+    }
   }, [session])
+
+  useEffect(() => {
+    loadAnalytics()
+  }, [loadAnalytics])
 
   if (!analytics && !error) {
     return (
@@ -83,9 +96,14 @@ export function DashboardPage() {
       icon: Users,
     },
     {
-      label: 'Kasalliklar',
-      value: analytics.totals.diseaseLibrary,
-      icon: Leaf,
+      label: 'Faol admin',
+      value: analytics.roleBreakdown?.admins ?? 0,
+      icon: ShieldCheck,
+    },
+    {
+      label: 'Nofaol user',
+      value: analytics.statusBreakdown?.inactive ?? 0,
+      icon: UserX,
     },
   ]
 
@@ -97,10 +115,16 @@ export function DashboardPage() {
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Admin</p>
             <h1 className="mt-3 font-display text-4xl text-white">Dashboard</h1>
           </div>
-          <Link to="/admin/users" className="button-primary">
-            <Users className="h-4 w-4" />
-            Userlarni boshqarish
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={loadAnalytics} disabled={refreshing} className="button-ghost">
+              {refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+              Yangilash
+            </button>
+            <Link to="/admin/users" className="button-primary">
+              <Users className="h-4 w-4" />
+              Userlarni boshqarish
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -216,6 +240,67 @@ export function DashboardPage() {
               Hozircha tahlil ma'lumotlari yetarli emas.
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="glass-panel p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <UserCheck className="h-5 w-5 text-emerald-200" />
+            <h2 className="font-display text-2xl text-white">Tezkor insight</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+              <p className="text-sm text-slate-400">Eng faol user</p>
+              <p className="mt-2 font-display text-2xl text-white">
+                {analytics.topUser?.name ?? '-'}
+              </p>
+              <p className="mt-2 text-sm text-slate-300">
+                {analytics.topUser ? `${analytics.topUser.scans} ta scan` : "Ma'lumot yo'q"}
+              </p>
+            </div>
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+              <p className="text-sm text-slate-400">Faol userlar</p>
+              <p className="mt-2 font-display text-2xl text-white">
+                {analytics.statusBreakdown?.active ?? 0}
+              </p>
+              <p className="mt-2 text-sm text-slate-300">
+                {analytics.roleBreakdown?.users ?? 0} ta oddiy user, {analytics.roleBreakdown?.admins ?? 0} ta admin
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-panel p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <Users className="h-5 w-5 text-cyan-200" />
+            <h2 className="font-display text-2xl text-white">Yangi qo'shilgan userlar</h2>
+          </div>
+          <div className="space-y-3">
+            {(analytics.recentUsers ?? []).length ? (
+              analytics.recentUsers.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3"
+                >
+                  <div>
+                    <p className="font-medium text-white">{item.name}</p>
+                    <p className="text-sm text-slate-400">{item.role}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-300">{formatDateTime(item.createdAt)}</p>
+                    <p className="text-xs text-slate-500">
+                      {item.lastLoginAt ? `Oxirgi kirish: ${formatDateTime(item.lastLoginAt)}` : 'Hali login qilmagan'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-8 text-sm text-slate-400">
+                Hozircha yangi userlar yo'q.
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

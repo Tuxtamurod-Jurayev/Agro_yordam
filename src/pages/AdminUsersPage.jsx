@@ -2,10 +2,13 @@ import {
   Activity,
   LoaderCircle,
   Plus,
+  RefreshCcw,
   Search,
   ShieldCheck,
   Trash2,
+  UserCheck,
   UserCog,
+  UserX,
   Users,
   X,
 } from 'lucide-react'
@@ -143,6 +146,8 @@ export function AdminUsersPage() {
   const selectedUser = users.find((item) => item.id === selectedUserId)
   const totalUsers = users.length
   const activeUsers = users.filter((item) => item.status === 'active').length
+  const inactiveUsers = users.filter((item) => item.status === 'inactive').length
+  const adminUsers = users.filter((item) => item.role === 'admin').length
   const totalScans = users.reduce((sum, item) => sum + Number(item.scanCount || 0), 0)
 
   const summaryCards = useMemo(
@@ -155,15 +160,25 @@ export function AdminUsersPage() {
       {
         label: 'Faol',
         value: activeUsers,
-        icon: ShieldCheck,
+        icon: UserCheck,
       },
       {
         label: 'Scanlar',
         value: totalScans,
         icon: Activity,
       },
+      {
+        label: 'Adminlar',
+        value: adminUsers,
+        icon: ShieldCheck,
+      },
+      {
+        label: 'Nofaol',
+        value: inactiveUsers,
+        icon: UserX,
+      },
     ],
-    [activeUsers, totalScans, totalUsers],
+    [activeUsers, adminUsers, inactiveUsers, totalScans, totalUsers],
   )
 
   const loadUsers = useCallback(
@@ -345,11 +360,15 @@ export function AdminUsersPage() {
               <Plus className="h-4 w-4" />
               Yangi user
             </button>
+            <button type="button" onClick={() => loadUsers({ search, role })} className="button-ghost">
+              <RefreshCcw className="h-4 w-4" />
+              Yangilash
+            </button>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map((item) => {
           const Icon = item.icon
 
@@ -426,10 +445,22 @@ export function AdminUsersPage() {
                       <div>
                         <p className="font-medium text-white">{item.name}</p>
                         <p className="text-sm text-slate-400">{item.email}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.lastLoginAt
+                            ? `Oxirgi kirish: ${formatDateTime(item.lastLoginAt)}`
+                            : 'Hali login qilmagan'}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.role}</p>
                         <p className="text-sm text-slate-300">{item.scanCount} ta scan</p>
+                        <p
+                          className={`mt-1 text-xs ${
+                            item.status === 'active' ? 'text-emerald-200' : 'text-amber-200'
+                          }`}
+                        >
+                          {item.status === 'active' ? 'Faol' : 'Nofaol'}
+                        </p>
                       </div>
                     </div>
                   </button>
@@ -457,6 +488,9 @@ export function AdminUsersPage() {
                   <p className="mt-2 text-sm text-slate-300">Hudud: {selectedUser.region || '-'}</p>
                   <p className="text-sm text-slate-300">Xo'jalik: {selectedUser.farmName || '-'}</p>
                   <p className="text-sm text-slate-300">Yaratilgan: {formatDateTime(selectedUser.createdAt)}</p>
+                  <p className="text-sm text-slate-300">
+                    Oxirgi kirish: {selectedUser.lastLoginAt ? formatDateTime(selectedUser.lastLoginAt) : '-'}
+                  </p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">

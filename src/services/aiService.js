@@ -165,19 +165,19 @@ async function runOpenAiProxy(imageSrc) {
     indicators: data.indicators ?? ['OpenAI orqali tahlil qilindi'],
     disease,
     source: data.source ?? 'openai',
-    model: data.model ?? 'gpt-5.4-mini',
+    model: data.model ?? 'gpt-4.1-mini',
+    cacheHit: Boolean(data.cacheHit),
   }
 }
 
 export async function analyzePlantImage(imageSrc) {
-  await new Promise((resolve) => {
-    window.setTimeout(resolve, 900)
-  })
-
   try {
     return await runOpenAiProxy(imageSrc)
-  } catch {
-    // OpenAI server ishlamasa yoki key bo'lmasa lokal klassifikatordan foydalanamiz.
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status >= 500) {
+      // Server AI ishlamasa foydalanuvchini to'xtatmaymiz, lokal klassifikatordan foydalanamiz.
+      return runLocalClassifier(imageSrc)
+    }
   }
 
   return runLocalClassifier(imageSrc)

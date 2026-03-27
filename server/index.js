@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
@@ -105,6 +105,10 @@ function sanitizeSearch(value) {
   return String(value || '').trim()
 }
 
+function getImageHash(imageSrc) {
+  return createHash('sha256').update(imageSrc).digest('hex')
+}
+
 const dayLabelFormatter = new Intl.DateTimeFormat('en-US', {
   weekday: 'short',
   timeZone: 'UTC',
@@ -202,7 +206,7 @@ function calculateAverageConfidence(scans) {
 
 async function getAnalyticsSnapshot() {
   const [usersResult, scansResult] = await Promise.all([
-    query('select id, full_name, role from app_users'),
+    query('select id, full_name, role, status, created_at, last_login_at from app_users'),
     query(
       `
         select
@@ -224,6 +228,40 @@ async function getAnalyticsSnapshot() {
   const recentScans = [...scans]
     .sort((left, right) => asDate(right.created_at) - asDate(left.created_at))
     .slice(0, 8)
+  const recentUsers = [...usersResult.rows]
+    .sort((left, right) => asDate(right.created_at) - asDate(left.created_at))
+    .slice(0, 6)
+    .map((row) => ({
+      id: row.id,
+      name: row.full_name,
+      role: row.role,
+      status: row.status,
+      createdAt: row.created_at,
+      lastLoginAt: row.last_login_at,
+    }))
+  const userActivity = usersResult.rows
+    .map((row) => ({
+      id: row.id,
+      name: row.full_name,
+      role: row.role,
+      status: row.status,
+      scans: scans.filter((scan) => scan.user_id === row.id).length,
+    }))
+    .sort((left, right) => {
+      if (right.scans !== left.scans) {
+        return right.scans - left.scans
+      }
+      return left.name.localeCompare(right.name)
+    })
+  const roleBreakdown = {
+    admins: usersResult.rows.filter((row) => row.role === 'admin').length,
+    users: usersResult.rows.filter((row) => row.role === 'user').length,
+  }
+  const statusBreakdown = {
+    active: usersResult.rows.filter((row) => row.status === 'active').length,
+    inactive: usersResult.rows.filter((row) => row.status === 'inactive').length,
+  }
+  const topUser = userActivity[0] ?? null
 
   return {
     totals: {
@@ -243,19 +281,11 @@ async function getAnalyticsSnapshot() {
     dailyScans: createDailySeries(scans, 7),
     monthlyScans: createMonthlySeries(scans, 6),
     recentScans: recentScans.map(mapScanRow),
-    userActivity: usersResult.rows
-      .map((row) => ({
-        id: row.id,
-        name: row.full_name,
-        role: row.role,
-        scans: scans.filter((scan) => scan.user_id === row.id).length,
-      }))
-      .sort((left, right) => {
-        if (right.scans !== left.scans) {
-          return right.scans - left.scans
-        }
-        return left.name.localeCompare(right.name)
-      }),
+    userActivity,
+    recentUsers,
+    roleBreakdown,
+    statusBreakdown,
+    topUser,
   }
 }
 
@@ -280,6 +310,87 @@ async function getUserStats(userId) {
     topDiseases,
     monthlyScans: createMonthlySeries(scans, 6),
   }
+}
+
+async function getCachedAnalysis(imageHash) {
+  const result = await query(
+    `
+      select disease_key, disease_name, confidence, summary, indicators, source, model_used
+      from ai_analysis_cache
+      where image_hash = $1
+      limit 1
+    `,
+    [imageHash],
+  )
+
+  if (!result.rowCount) {
+    return null
+  }
+
+  const row = result.rows[0]
+  return {
+    diseaseKey: row.disease_key,
+    diseaseName: row.disease_name,
+    confidence: row.confidence,
+    summary: row.summary,
+    indicators: row.indicators ?? [],
+    source: `${row.source}-cache`,
+    model: row.model_used,
+    cacheHit: true,
+  }
+}
+
+async function upsertCachedAnalysis(imageHash, analysis) {
+  const existing = await query('select id from ai_analysis_cache where image_hash = $1 limit 1', [imageHash])
+
+  if (existing.rowCount) {
+    await query(
+      `
+        update ai_analysis_cache
+        set
+          disease_key = $2,
+          disease_name = $3,
+          confidence = $4,
+          summary = $5,
+          indicators = $6::jsonb,
+          source = $7,
+          model_used = $8,
+          updated_at = now()
+        where image_hash = $1
+      `,
+      [
+        imageHash,
+        analysis.diseaseKey,
+        analysis.diseaseName,
+        analysis.confidence,
+        analysis.summary ?? '',
+        JSON.stringify(analysis.indicators ?? []),
+        analysis.source ?? 'openai',
+        analysis.model ?? defaultModel,
+      ],
+    )
+    return
+  }
+
+  await query(
+    `
+      insert into ai_analysis_cache (
+        id, image_hash, disease_key, disease_name, confidence, summary, indicators, source, model_used
+      )
+      values ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9)
+    `,
+    [
+      randomUUID(),
+      imageHash,
+      analysis.diseaseKey,
+      analysis.diseaseName,
+      analysis.confidence,
+      analysis.summary ?? '',
+      JSON.stringify(analysis.indicators ?? []),
+      analysis.source ?? 'openai',
+      analysis.model ?? defaultModel,
+    ],
+  )
 }
 
 function extractJsonObject(rawText) {
@@ -465,7 +576,7 @@ app.patch('/api/auth/me', authMiddleware, async (request, response) => {
     return response.json({ token, user })
   } catch (error) {
     return response.status(500).json({
-      error: error instanceof Error ? error.message : 'Profilni yangilab bo‘lmadi.',
+      error: error instanceof Error ? error.message : "Profilni yangilab bo'lmadi.",
     })
   }
 })
@@ -475,7 +586,7 @@ app.patch('/api/auth/me/password', authMiddleware, async (request, response) => 
   const nextPassword = String(request.body?.nextPassword || '')
 
   if (nextPassword.length < 6) {
-    return response.status(400).json({ error: 'Yangi parol kamida 6 belgidan iborat bo‘lishi kerak.' })
+    return response.status(400).json({ error: "Yangi parol kamida 6 belgidan iborat bo'lishi kerak." })
   }
 
   const result = await query('select password_hash from app_users where id = $1 limit 1', [request.user.id])
@@ -782,13 +893,6 @@ app.get('/api/analytics', authMiddleware, async (request, response) => {
 })
 
 app.post('/api/analyze-plant', async (request, response) => {
-  if (!client) {
-    return response.status(503).json({
-      error: "OPENAI_API_KEY topilmadi. Server real AI uchun sozlanmagan.",
-      code: 'OPENAI_NOT_CONFIGURED',
-    })
-  }
-
   const imageSrc = request.body?.imageSrc
 
   if (!imageSrc || typeof imageSrc !== 'string') {
@@ -799,6 +903,20 @@ app.post('/api/analyze-plant', async (request, response) => {
   }
 
   try {
+    const imageHash = getImageHash(imageSrc)
+    const cached = await getCachedAnalysis(imageHash)
+
+    if (cached) {
+      return response.json(cached)
+    }
+
+    if (!client) {
+      return response.status(503).json({
+        error: "OPENAI_API_KEY topilmadi. Server real AI uchun sozlanmagan.",
+        code: 'OPENAI_NOT_CONFIGURED',
+      })
+    }
+
     const diseaseGuide = JSON.stringify(buildDiseaseGuide())
 
     const aiResponse = await client.responses.create({
@@ -892,6 +1010,7 @@ Qoidalar:
 
     const parsed = extractJsonObject(aiResponse.output_text)
     const normalized = normalizeAnalysis(parsed, aiResponse.model || defaultModel)
+    await upsertCachedAnalysis(imageHash, normalized)
 
     return response.json(normalized)
   } catch (error) {

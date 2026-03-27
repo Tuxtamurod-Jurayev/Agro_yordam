@@ -9,6 +9,7 @@ Qishloq xo'jaligi kasalliklarini aniqlash, monitoring qilish va foydalanuvchilar
 - Har bir user bo'yicha scan statistikasi va monitoring
 - Kamera yoki fayl orqali barg rasmi olish
 - OpenAI Vision integratsiyasi va avtomatik lokal fallback
+- AI cache: bir xil rasm qayta yuborilganda natija tezroq qaytadi
 - Scan tarixi va qidiruv
 - Supabase Postgres bilan real backend ulanishi
 
@@ -37,6 +38,7 @@ Lokal ishga tushirish uchun `.env` tayyorlangan. Agar boshqa serverga ko'chirsan
 2. `DATABASE_URL` ni Supabase direct connection string bilan to'ldiring
 3. `JWT_SECRET` ni yangilang
 4. Ixtiyoriy: `OPENAI_API_KEY` kiriting
+5. Ixtiyoriy: `OPENAI_VISION_MODEL=gpt-4.1-mini` yoki siz ishlatayotgan modelni belgilang
 
 ## GitHub
 

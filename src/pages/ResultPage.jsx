@@ -76,6 +76,12 @@ export function ResultPage() {
   }
 
   const disease = scan.disease
+  const aiLabel =
+    scan.analysisSource === 'openai-cache'
+      ? 'OpenAI cache'
+      : scan.analysisSource === 'openai'
+        ? 'OpenAI Vision'
+        : 'Lokal fallback'
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -116,7 +122,7 @@ export function ResultPage() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
-            AI manba: {scan.analysisSource === 'openai' ? 'OpenAI Vision' : 'Lokal fallback'}
+            AI manba: {aiLabel}
           </span>
           {scan.modelUsed ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
