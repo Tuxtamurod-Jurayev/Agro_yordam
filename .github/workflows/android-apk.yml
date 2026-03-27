@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Setup Java
@@ -31,10 +31,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build web and sync Android
-        run: npm run mobile:sync
+      - name: Build web assets
+        run: npm run build
         env:
           VITE_MOBILE_API_BASE_URL: https://agro-yordam.vercel.app
+
+      - name: Copy web assets into Android project
+        run: npx cap copy android
 
       - name: Build debug APK
         working-directory: android
