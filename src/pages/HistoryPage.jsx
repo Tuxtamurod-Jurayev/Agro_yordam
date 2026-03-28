@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { platformService } from '../services/platformService'
+import { isNativeApp } from '../services/runtime'
 import { formatDateTime } from '../utils/format'
 
 export function HistoryPage() {
@@ -13,6 +14,7 @@ export function HistoryPage() {
   const location = useLocation()
   const createdCount = location.state?.createdCount ?? 0
   const latestScanId = location.state?.latestScanId ?? null
+  const compact = isNativeApp
 
   useEffect(() => {
     async function loadScans() {
@@ -33,10 +35,12 @@ export function HistoryPage() {
   }, [search, session])
 
   return (
-    <div className="space-y-6">
-      <section className="glass-panel p-6 sm:p-8">
+    <div className={compact ? 'space-y-4 pb-4' : 'space-y-6'}>
+      <section className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}>
         <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Scan tarixi</p>
-        <h1 className="mt-3 font-display text-4xl text-white">Oxirgi tahlillar</h1>
+        <h1 className={`mt-3 font-display text-white ${compact ? 'text-2xl' : 'text-4xl'}`}>
+          Oxirgi tahlillar
+        </h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
           Bu bo'limda foydalanuvchining barcha scanlari saqlanadi. Admin butun tizim bo'yicha
           natijalarni ko'ra oladi.
@@ -70,7 +74,7 @@ export function HistoryPage() {
       ) : null}
 
       {scans.length ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section className={`grid gap-4 ${compact ? '' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
           {scans.map((scan) => (
             <Link
               key={scan.id}

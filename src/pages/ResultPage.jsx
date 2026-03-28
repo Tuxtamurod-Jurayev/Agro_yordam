@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { platformService } from '../services/platformService'
+import { isNativeApp } from '../services/runtime'
 import { formatDateTime } from '../utils/format'
 
 export function ResultPage() {
@@ -23,6 +24,7 @@ export function ResultPage() {
   const { scanId } = useParams()
   const { session, user } = useAuth()
   const navigate = useNavigate()
+  const compact = isNativeApp
 
   useEffect(() => {
     async function loadScan() {
@@ -84,11 +86,11 @@ export function ResultPage() {
         : 'Lokal fallback'
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <div className={compact ? 'space-y-4 pb-4' : 'grid gap-6 xl:grid-cols-[0.95fr_1.05fr]'}>
       <MotionSection
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 sm:p-8"
+        className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}
       >
         <img
           src={scan.imageSrc}
@@ -99,7 +101,9 @@ export function ResultPage() {
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Aniqlangan natija</p>
-            <h1 className="mt-2 font-display text-3xl text-white sm:text-4xl">{scan.diseaseName}</h1>
+            <h1 className={`mt-2 font-display text-white ${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>
+              {scan.diseaseName}
+            </h1>
             <p className="mt-2 text-sm text-slate-300">{formatDateTime(scan.createdAt)}</p>
           </div>
           <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-300/10 px-5 py-4 text-center">
@@ -153,8 +157,8 @@ export function ResultPage() {
         </div>
       </MotionSection>
 
-      <div className="space-y-6">
-        <section className="glass-panel p-6">
+      <div className={compact ? 'space-y-4' : 'space-y-6'}>
+        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
           <div className="flex items-start gap-3">
             <Leaf className="mt-1 h-6 w-6 text-emerald-200" />
             <div>
@@ -165,7 +169,7 @@ export function ResultPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className={`grid gap-4 ${compact ? '' : 'md:grid-cols-3'}`}>
           {[
             {
               icon: ShieldPlus,
@@ -197,7 +201,7 @@ export function ResultPage() {
           })}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
           <div className="flex items-start gap-3">
             <Droplets className="mt-1 h-6 w-6 text-sky-200" />
             <div>

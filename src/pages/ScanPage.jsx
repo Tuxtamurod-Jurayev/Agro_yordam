@@ -6,6 +6,7 @@ import { CameraCapture } from '../components/CameraCapture'
 import { useAuth } from '../context/AuthContext'
 import { analyzePlantImage } from '../services/aiService'
 import { platformService } from '../services/platformService'
+import { isNativeApp } from '../services/runtime'
 import { formatDateTime } from '../utils/format'
 
 const MAX_BATCH_IMAGES = 5
@@ -23,6 +24,7 @@ export function ScanPage() {
 
   const { session } = useAuth()
   const navigate = useNavigate()
+  const compact = isNativeApp
 
   useEffect(() => {
     async function loadRecentScans() {
@@ -103,20 +105,24 @@ export function ScanPage() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div className={compact ? 'space-y-4 pb-4' : 'grid gap-6 xl:grid-cols-[1.05fr_0.95fr]'}>
       <MotionSection
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 sm:p-8"
+        className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}
       >
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Kasallikni aniqlash</p>
-            <h1 className="mt-3 font-display text-3xl text-white sm:text-4xl">Barglarni skan qiling</h1>
+            <h1 className={`mt-3 font-display text-white ${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>
+              Barglarni skan qiling
+            </h1>
           </div>
-          <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
-            OpenAI Vision + lokal fallback
-          </div>
+          {!compact ? (
+            <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
+              OpenAI Vision + lokal fallback
+            </div>
+          ) : null}
         </div>
 
         <CameraCapture images={images} onImagesChange={setImages} maxImages={MAX_BATCH_IMAGES} />
@@ -164,15 +170,17 @@ export function ScanPage() {
         </div>
       </MotionSection>
 
-      <div className="space-y-6">
-        <section className="glass-panel p-6">
+      <div className={compact ? 'space-y-4' : 'space-y-6'}>
+        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
           <div className="flex items-start gap-4">
             <div className="rounded-3xl bg-cyan-300/10 p-3">
               <Bot className="h-6 w-6 text-cyan-200" />
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-400">AI oqimi</p>
-              <h2 className="mt-2 font-display text-3xl text-white">Yangi analiz tartibi</h2>
+              <h2 className={`mt-2 font-display text-white ${compact ? 'text-2xl' : 'text-3xl'}`}>
+                Yangi analiz tartibi
+              </h2>
             </div>
           </div>
           <div className="mt-6 grid gap-3">
@@ -191,10 +199,10 @@ export function ScanPage() {
           </div>
         </section>
 
-        <section className="glass-panel p-6">
+        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
           <div className="flex items-center gap-3">
             <Sparkles className="h-6 w-6 text-amber-200" />
-            <h2 className="font-display text-2xl text-white">So'nggi scanlar</h2>
+            <h2 className={`font-display text-white ${compact ? 'text-xl' : 'text-2xl'}`}>So'nggi scanlar</h2>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -228,10 +236,10 @@ export function ScanPage() {
           </div>
         </section>
 
-        <section className="glass-panel p-6">
+        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-emerald-200" />
-            <h2 className="font-display text-2xl text-white">Sifat bo'yicha tavsiya</h2>
+            <h2 className={`font-display text-white ${compact ? 'text-xl' : 'text-2xl'}`}>Sifat bo'yicha tavsiya</h2>
           </div>
           <p className="mt-4 text-sm leading-7 text-slate-300">
             Oqartirilgan yoki juda qorong'i suratlar ishonch foizini pasaytiradi. Bargni tekis

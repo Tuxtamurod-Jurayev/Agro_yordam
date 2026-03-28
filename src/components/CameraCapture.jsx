@@ -1,5 +1,20 @@
-import { Camera, ImageUp, RefreshCcw, ScanSearch, Smartphone, Trash2, XCircle } from 'lucide-react'
+import {
+  Camera as CameraIcon,
+  ImageUp,
+  LoaderCircle,
+  RefreshCcw,
+  ScanSearch,
+  Smartphone,
+  Trash2,
+  XCircle,
+} from 'lucide-react'
+import {
+  Camera as NativeCamera,
+  CameraResultType,
+  CameraSource,
+} from '@capacitor/camera'
 import { useEffect, useRef, useState } from 'react'
+import { isNativeApp } from '../services/runtime'
 
 const MAX_DIMENSION = 1600
 const JPEG_QUALITY = 0.86
@@ -47,6 +62,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
 
   const [cameraOpen, setCameraOpen] = useState(false)
   const [error, setError] = useState('')
+  const [nativeLoading, setNativeLoading] = useState(false)
 
   const imageCount = images.length
   const hasReachedLimit = imageCount >= maxImages
@@ -62,7 +78,54 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
     onImagesChange(nextImages.slice(0, maxImages))
   }
 
+  function isCancelError(message) {
+    const normalized = String(message || '').toLowerCase()
+    return normalized.includes('cancel') || normalized.includes('canceled') || normalized.includes('user cancelled')
+  }
+
+  async function handleNativeCapture(source) {
+    if (hasReachedLimit) {
+      setError(`Bir martada ${maxImages} tagacha rasm yuklash mumkin.`)
+      return
+    }
+
+    setNativeLoading(true)
+    setError('')
+
+    try {
+      const photo = await NativeCamera.getPhoto({
+        quality: 88,
+        allowEditing: false,
+        correctOrientation: true,
+        resultType: CameraResultType.DataUrl,
+        source,
+      })
+
+      const dataUrl =
+        photo.dataUrl ||
+        (photo.base64String ? `data:image/${photo.format || 'jpeg'};base64,${photo.base64String}` : '')
+
+      if (!dataUrl) {
+        throw new Error("Rasmni olishning imkoni bo'lmadi.")
+      }
+
+      const compressed = await compressImage(dataUrl)
+      applyImages([...images, compressed])
+    } catch (nativeError) {
+      if (!isCancelError(nativeError?.message)) {
+        setError("Rasmni olish yoki yuklashda xatolik yuz berdi. Qayta urinib ko'ring.")
+      }
+    } finally {
+      setNativeLoading(false)
+    }
+  }
+
   async function handleStartCamera() {
+    if (isNativeApp) {
+      await handleNativeCapture(CameraSource.Camera)
+      return
+    }
+
     if (hasReachedLimit) {
       setError(`Bir martada ${maxImages} tagacha rasm yuklash mumkin.`)
       return
@@ -178,17 +241,23 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
             type="button"
             onClick={handleStartCamera}
             className="button-primary w-full justify-center sm:w-auto"
+            disabled={nativeLoading}
           >
-            <Camera className="h-4 w-4" />
-            Kamerani yoqish
+            {nativeLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CameraIcon className="h-4 w-4" />}
+            {isNativeApp ? 'Kamera' : 'Kamerani yoqish'}
           </button>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() =>
+              isNativeApp
+                ? handleNativeCapture(CameraSource.Photos)
+                : fileInputRef.current?.click()
+            }
             className="button-ghost w-full justify-center sm:w-auto"
+            disabled={nativeLoading}
           >
             <ImageUp className="h-4 w-4" />
-            Rasmlarni yuklash
+            {isNativeApp ? 'Galeriya' : 'Rasmlarni yuklash'}
           </button>
           {imageCount ? (
             <button
@@ -211,7 +280,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        capture={isNativeApp ? undefined : 'environment'}
         multiple
         className="hidden"
         onChange={handleFileChange}
@@ -220,6 +289,12 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
       {error ? (
         <div className="rounded-3xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
           {error}
+        </div>
+      ) : null}
+
+      {nativeLoading ? (
+        <div className="rounded-3xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+          Rasm tayyorlanmoqda...
         </div>
       ) : null}
 
@@ -268,11 +343,11 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
             </div>
             <div className="space-y-2">
               <p className="font-display text-2xl text-white">
-                5 tagacha barg rasmini yuklab tahlilni boshlang
+                {maxImages} tagacha barg rasmini yuklab tahlilni boshlang
               </p>
               <p className="mx-auto max-w-md text-sm text-slate-300">
-                Har bir rasm avtomatik siqiladi va ketma-ket AI tahlilidan o'tadi. Bu yuklashni
-                barqaror qiladi va bir xil faylni qayta tanlash muammosini ham hal qiladi.
+                Har bir rasm avtomatik siqiladi va ketma-ket AI tahlilidan o'tadi. Native ilovada
+                kamera va galeriya qurilmaning o'z picker'i orqali ochiladi.
               </p>
             </div>
           </div>

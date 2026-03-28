@@ -2,6 +2,7 @@ import { AlertTriangle, KeyRound, LoaderCircle, Save, Trash2, UserRound } from '
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isNativeApp } from '../services/runtime'
 
 const profileDefaults = {
   name: '',
@@ -25,6 +26,7 @@ export function AccountPage() {
   const [savingPassword, setSavingPassword] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const navigate = useNavigate()
+  const compact = isNativeApp
 
   useEffect(() => {
     setProfileForm({
@@ -97,16 +99,18 @@ export function AccountPage() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <div className={compact ? 'space-y-4 pb-4' : 'grid gap-6 xl:grid-cols-[0.9fr_1.1fr]'}>
       <section className="space-y-6">
-        <div className="glass-panel p-6 sm:p-8">
+        <div className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}>
           <div className="flex items-start gap-4">
             <div className="rounded-3xl bg-emerald-300/10 p-3">
               <UserRound className="h-6 w-6 text-emerald-200" />
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Account</p>
-              <h1 className="mt-2 font-display text-3xl text-white sm:text-4xl">Profil boshqaruvi</h1>
+              <h1 className={`mt-2 font-display text-white ${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>
+                Profil boshqaruvi
+              </h1>
               <p className="mt-3 text-sm leading-7 text-slate-300">
                 Ism, email va xo'jalik ma'lumotlarini yangilashingiz mumkin.
               </p>
@@ -198,13 +202,15 @@ export function AccountPage() {
           </form>
         </div>
 
-        <div className="glass-panel p-6 sm:p-8">
+        <div className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}>
           <div className="flex items-start gap-4">
             <div className="rounded-3xl bg-cyan-300/10 p-3">
               <KeyRound className="h-6 w-6 text-cyan-200" />
             </div>
             <div>
-              <h2 className="font-display text-3xl text-white">Parolni almashtirish</h2>
+              <h2 className={`font-display text-white ${compact ? 'text-2xl' : 'text-3xl'}`}>
+                Parolni almashtirish
+              </h2>
               <p className="mt-3 text-sm leading-7 text-slate-300">
                 Xavfsizlik uchun joriy parolni kiriting va yangisini belgilang.
               </p>
@@ -263,9 +269,11 @@ export function AccountPage() {
       </section>
 
       <section className="space-y-6">
-        <div className="glass-panel p-6 sm:p-8">
+        <div className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}>
           <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Shaxsiy statistika</p>
-          <h2 className="mt-3 font-display text-3xl text-white">Faollik ko'rsatkichlari</h2>
+          <h2 className={`mt-3 font-display text-white ${compact ? 'text-2xl' : 'text-3xl'}`}>
+            Faollik ko'rsatkichlari
+          </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
               <p className="text-sm text-slate-400">Jami scan</p>
@@ -289,13 +297,15 @@ export function AccountPage() {
           </div>
         </div>
 
-        <div className="glass-panel border border-rose-400/20 p-6 sm:p-8">
+        <div className={`glass-panel border border-rose-400/20 ${compact ? 'p-5' : 'p-6 sm:p-8'}`}>
           <div className="flex items-start gap-4">
             <div className="rounded-3xl bg-rose-400/10 p-3">
               <AlertTriangle className="h-6 w-6 text-rose-200" />
             </div>
             <div>
-              <h2 className="font-display text-3xl text-white">Accountni o'chirish</h2>
+              <h2 className={`font-display text-white ${compact ? 'text-2xl' : 'text-3xl'}`}>
+                Accountni o'chirish
+              </h2>
               <p className="mt-3 text-sm leading-7 text-slate-300">
                 Bu amal ortga qaytmaydi. Hisob, scan tarixi va bog'liq ma'lumotlar o'chiriladi.
               </p>

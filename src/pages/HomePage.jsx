@@ -12,6 +12,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { DISEASES } from '../data/diseases'
 import { platformService } from '../services/platformService'
+import { isNativeApp } from '../services/runtime'
 
 const features = [
   {
@@ -57,6 +58,101 @@ export function HomePage() {
 
   if (user?.role === 'admin') {
     return <Navigate to="/dashboard" replace />
+  }
+
+  if (isNativeApp) {
+    return (
+      <div className="space-y-4 pb-4">
+        <section className="glass-panel overflow-hidden p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-emerald-300/12">
+              <Leaf className="h-6 w-6 text-emerald-200" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Plant care</p>
+              <h1 className="font-display text-2xl text-white">Bargni skan qiling</h1>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-[1.75rem] bg-[linear-gradient(135deg,rgba(52,211,153,0.22),rgba(15,23,42,0.12)),radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_35%)] p-5">
+            <p className="max-w-xs text-sm leading-7 text-slate-100">
+              Kamera yoki galeriya orqali barg rasmini yuboring, AI ehtimoliy kasallik va amaliy
+              tavsiyalarni qaytarsin.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <Link to={user ? '/scan' : '/auth'} className="button-primary w-full justify-center">
+                <Camera className="h-4 w-4" />
+                {user ? 'Scan boshlash' : 'Kirish va boshlash'}
+              </Link>
+              <Link to="/history" className="button-ghost w-full justify-center">
+                Oxirgi natijalar
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {[
+              { label: 'Scan', value: analytics?.totals.totalScans ?? 0 },
+              { label: 'Ishonch', value: `${analytics?.totals.avgConfidence ?? 0}%` },
+              { label: 'Faol', value: analytics?.totals.activeUsers ?? 0 },
+            ].map((item) => (
+              <div key={item.label} className="rounded-[1.5rem] border border-white/10 bg-white/5 px-3 py-4 text-center">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                <p className="mt-2 font-display text-2xl text-white">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-3">
+          {features
+            .filter((feature) => feature.title !== 'Admin monitoring')
+            .map((feature) => {
+            const Icon = feature.icon
+
+            return (
+              <div key={feature.title} className="glass-panel flex items-start gap-4 p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-white/10">
+                  <Icon className="h-5 w-5 text-emerald-200" />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl text-white">{feature.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{feature.description}</p>
+                </div>
+              </div>
+            )
+            })}
+        </section>
+
+        <section className="glass-panel p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Kutubxona</p>
+              <h2 className="mt-1 font-display text-2xl text-white">Ko'p uchraydigan kasalliklar</h2>
+            </div>
+            <Sparkles className="h-5 w-5 text-amber-200" />
+          </div>
+          <div className="mt-4 grid gap-3">
+            {DISEASES.slice(0, 3).map((disease) => (
+              <div
+                key={disease.key}
+                className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4"
+              >
+                <div
+                  className="h-2 rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${disease.palette[0]}, ${disease.palette[1]})`,
+                  }}
+                />
+                <h3 className="mt-3 font-display text-xl text-white">{disease.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{disease.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
   }
 
   return (
