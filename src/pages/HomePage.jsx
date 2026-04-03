@@ -62,29 +62,29 @@ export function HomePage() {
 
   if (isNativeApp) {
     return (
-      <div className="space-y-4 pb-4">
-        <section className="glass-panel overflow-hidden p-5">
+      <div className="native-page">
+        <section className="native-card overflow-hidden p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-emerald-300/12">
-              <Leaf className="h-6 w-6 text-emerald-200" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#e0eccb]">
+              <Leaf className="h-6 w-6 text-[#55703d]" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Plant care</p>
-              <h1 className="font-display text-2xl text-white">Bargni skan qiling</h1>
+              <p className="text-xs uppercase tracking-[0.24em] text-[#7e8d73]">Plant care</p>
+              <h1 className="font-display text-2xl text-[#203019]">Bargni skan qiling</h1>
             </div>
           </div>
 
-          <div className="mt-5 rounded-[1.75rem] bg-[linear-gradient(135deg,rgba(52,211,153,0.22),rgba(15,23,42,0.12)),radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_35%)] p-5">
-            <p className="max-w-xs text-sm leading-7 text-slate-100">
+          <div className="mt-5 rounded-[1.75rem] bg-[linear-gradient(135deg,#7ba04b_0%,#4f7a43_52%,#38553d_100%)] p-5 shadow-[0_20px_36px_rgba(79,122,67,0.24)]">
+            <p className="max-w-xs text-sm leading-7 text-white">
               Kamera yoki galeriya orqali barg rasmini yuboring, AI ehtimoliy kasallik va amaliy
               tavsiyalarni qaytarsin.
             </p>
             <div className="mt-4 grid gap-3">
-              <Link to={user ? '/scan' : '/auth'} className="button-primary w-full justify-center">
+              <Link to={user ? '/scan' : '/auth'} className="native-secondary-button w-full border-white/30 bg-white text-[#294020]">
                 <Camera className="h-4 w-4" />
                 {user ? 'Scan boshlash' : 'Kirish va boshlash'}
               </Link>
-              <Link to="/history" className="button-ghost w-full justify-center">
+              <Link to="/history" className="native-chip w-full justify-center border-white/20 bg-white/10 py-3 text-white">
                 Oxirgi natijalar
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -97,9 +97,9 @@ export function HomePage() {
               { label: 'Ishonch', value: `${analytics?.totals.avgConfidence ?? 0}%` },
               { label: 'Faol', value: analytics?.totals.activeUsers ?? 0 },
             ].map((item) => (
-              <div key={item.label} className="rounded-[1.5rem] border border-white/10 bg-white/5 px-3 py-4 text-center">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                <p className="mt-2 font-display text-2xl text-white">{item.value}</p>
+              <div key={item.label} className="native-muted-card px-3 py-4 text-center">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-[#7f8f73]">{item.label}</p>
+                <p className="mt-2 font-display text-2xl text-[#22311c]">{item.value}</p>
               </div>
             ))}
           </div>
@@ -112,32 +112,32 @@ export function HomePage() {
             const Icon = feature.icon
 
             return (
-              <div key={feature.title} className="glass-panel flex items-start gap-4 p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-white/10">
-                  <Icon className="h-5 w-5 text-emerald-200" />
+              <div key={feature.title} className="native-card flex items-start gap-4 p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#edf4df]">
+                  <Icon className="h-5 w-5 text-[#648840]" />
                 </div>
                 <div>
-                  <h2 className="font-display text-xl text-white">{feature.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{feature.description}</p>
+                  <h2 className="font-display text-xl text-[#22311c]">{feature.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#58684d]">{feature.description}</p>
                 </div>
               </div>
             )
             })}
         </section>
 
-        <section className="glass-panel p-5">
+        <section className="native-card p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Kutubxona</p>
-              <h2 className="mt-1 font-display text-2xl text-white">Ko'p uchraydigan kasalliklar</h2>
+              <p className="text-xs uppercase tracking-[0.24em] text-[#7f8f73]">Kutubxona</p>
+              <h2 className="mt-1 font-display text-2xl text-[#22311c]">Ko'p uchraydigan kasalliklar</h2>
             </div>
-            <Sparkles className="h-5 w-5 text-amber-200" />
+            <Sparkles className="h-5 w-5 text-[#90ab4f]" />
           </div>
           <div className="mt-4 grid gap-3">
             {DISEASES.slice(0, 3).map((disease) => (
               <div
                 key={disease.key}
-                className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4"
+                className="native-muted-card p-4"
               >
                 <div
                   className="h-2 rounded-full"
@@ -145,8 +145,8 @@ export function HomePage() {
                     background: `linear-gradient(90deg, ${disease.palette[0]}, ${disease.palette[1]})`,
                   }}
                 />
-                <h3 className="mt-3 font-display text-xl text-white">{disease.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{disease.description}</p>
+                <h3 className="mt-3 font-display text-xl text-[#24341f]">{disease.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#58684d]">{disease.description}</p>
               </div>
             ))}
           </div>

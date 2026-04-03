@@ -23,30 +23,40 @@ export function AppShell() {
   const pageTitle = pageTitleMap[location.pathname] ?? 'Agro Yordam'
 
   return (
-    <div className="safe-x min-h-screen bg-slate-950 text-slate-100">
+    <div className={`safe-x min-h-screen ${showNativeShell ? 'bg-[#eef3e2] text-[#1f2b1b]' : 'bg-slate-950 text-slate-100'}`}>
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-[-12rem] top-[-8rem] h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
-        <div className="absolute bottom-[-10rem] right-[-6rem] h-96 w-96 rounded-full bg-cyan-400/12 blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-200/30 to-transparent" />
+        {showNativeShell ? (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(132,171,72,0.24),transparent_26%),linear-gradient(180deg,#edf3df_0%,#f8f6ec_36%,#f3f7e9_100%)]" />
+            <div className="absolute -left-16 top-16 h-48 w-48 rounded-full bg-[#dce8c6] blur-3xl" />
+            <div className="absolute -right-16 bottom-16 h-56 w-56 rounded-full bg-[#d8e5bd] blur-3xl" />
+          </>
+        ) : (
+          <>
+            <div className="absolute left-[-12rem] top-[-8rem] h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
+            <div className="absolute bottom-[-10rem] right-[-6rem] h-96 w-96 rounded-full bg-cyan-400/12 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-200/30 to-transparent" />
+          </>
+        )}
       </div>
 
       {showNativeShell ? (
-        <header className="safe-top sticky top-0 z-30 border-b border-white/10 bg-slate-950/88 px-4 py-4 backdrop-blur-xl">
+        <header className="safe-top sticky top-0 z-30 border-b border-[#dce7d2] bg-[#eef3e2]/92 px-4 py-4 backdrop-blur-xl">
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => (isRoot ? navigate('/scan') : navigate(-1))}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-100"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#dbe5d0] bg-white text-[#2d4222]"
             >
               {isRoot ? <Leaf className="h-5 w-5 text-emerald-200" /> : <ArrowLeft className="h-5 w-5" />}
             </button>
             <div className="min-w-0 flex-1 text-center">
-              <p className="truncate font-display text-lg text-white">{pageTitle}</p>
-              <p className="truncate text-xs uppercase tracking-[0.24em] text-slate-500">
+              <p className="truncate font-display text-lg text-[#203019]">{pageTitle}</p>
+              <p className="truncate text-xs uppercase tracking-[0.24em] text-[#7f8f73]">
                 Smart plant care
               </p>
             </div>
-            <div className="h-11 w-11 rounded-2xl border border-white/10 bg-white/5" />
+            <div className="h-11 w-11 rounded-2xl border border-[#dbe5d0] bg-white/80" />
           </div>
         </header>
       ) : (

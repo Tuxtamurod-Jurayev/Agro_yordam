@@ -1,4 +1,4 @@
-import { LoaderCircle, LogIn, ShieldCheck, UserPlus } from 'lucide-react'
+import { Leaf, LoaderCircle, LogIn, ShieldCheck, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -45,6 +45,150 @@ export function AuthPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (isNativeApp) {
+    return (
+      <div className="native-page">
+        <section className="native-card overflow-hidden p-5">
+          <div className="rounded-[1.6rem] bg-[linear-gradient(135deg,#f8f5ea_0%,#eef5df_100%)] p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#e4efd2]">
+                <Leaf className="h-6 w-6 text-[#50703d]" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-[#829173]">Ankur style</p>
+                <h1 className="font-display text-2xl text-[#22311c]">Plant care login</h1>
+              </div>
+            </div>
+            <div className="mt-5 rounded-[1.5rem] border border-[#dce7d2] bg-white/80 p-4">
+              <p className="text-sm leading-7 text-[#516047]">
+                Tizimga kirib bargni skan qiling, natijani saqlang va AI tavsiyalarini mobil ilova
+                ichida ko'ring.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="native-card p-5">
+          <div className="grid grid-cols-2 rounded-full bg-[#edf4df] p-1.5">
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className={`rounded-full px-4 py-2.5 text-sm transition ${
+                mode === 'login' ? 'bg-white text-[#22311c] shadow-sm' : 'text-[#6c7c61]'
+              }`}
+            >
+              Kirish
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('register')}
+              className={`rounded-full px-4 py-2.5 text-sm transition ${
+                mode === 'register' ? 'bg-white text-[#22311c] shadow-sm' : 'text-[#6c7c61]'
+              }`}
+            >
+              Ro'yxat
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {mode === 'register' ? (
+              <label className="block space-y-2">
+                <span className="text-sm text-[#506045]">To'liq ism</span>
+                <input
+                  type="text"
+                  value={registerForm.name}
+                  onChange={(event) =>
+                    setRegisterForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                  required
+                  className="native-input"
+                  placeholder="Jasur Dehqon"
+                />
+              </label>
+            ) : null}
+
+            <label className="block space-y-2">
+              <span className="text-sm text-[#506045]">Email</span>
+              <input
+                type="email"
+                value={mode === 'login' ? loginForm.email : registerForm.email}
+                onChange={(event) =>
+                  mode === 'login'
+                    ? setLoginForm((current) => ({ ...current, email: event.target.value }))
+                    : setRegisterForm((current) => ({ ...current, email: event.target.value }))
+                }
+                required
+                className="native-input"
+                placeholder="you@example.com"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm text-[#506045]">Parol</span>
+              <input
+                type="password"
+                value={mode === 'login' ? loginForm.password : registerForm.password}
+                onChange={(event) =>
+                  mode === 'login'
+                    ? setLoginForm((current) => ({ ...current, password: event.target.value }))
+                    : setRegisterForm((current) => ({ ...current, password: event.target.value }))
+                }
+                required
+                minLength={6}
+                className="native-input"
+                placeholder="Kamida 6 ta belgi"
+              />
+            </label>
+
+            {error ? (
+              <div className="rounded-[1.3rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
+
+            <button type="submit" disabled={submitting} className="native-primary-button w-full">
+              {submitting ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Yuklanmoqda...
+                </>
+              ) : mode === 'login' ? (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  Tizimga kirish
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  Hisob yaratish
+                </>
+              )}
+            </button>
+          </form>
+        </section>
+
+        <section className="native-card p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-1 h-5 w-5 text-[#6f9540]" />
+            <div className="space-y-3">
+              <p className="text-sm leading-7 text-[#55654b]">
+                APK oddiy foydalanuvchilar uchun tayyorlangan. Admin monitoring paneli faqat web
+                versiyada ishlaydi.
+              </p>
+              <div className="native-muted-card px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.24em] text-[#7f8e74]">Mobile flow</p>
+                <p className="mt-2 text-sm text-[#43533a]">
+                  Kamera, galeriya, scan natijasi va tarix ekrani mobil foydalanuvchi uchun
+                  optimallashtirilgan.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
   }
 
   return (

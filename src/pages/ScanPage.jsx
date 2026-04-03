@@ -109,12 +109,14 @@ export function ScanPage() {
       <MotionSection
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`glass-panel ${compact ? 'p-5' : 'p-6 sm:p-8'}`}
+        className={compact ? 'native-card p-5' : 'glass-panel p-6 sm:p-8'}
       >
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Kasallikni aniqlash</p>
-            <h1 className={`mt-3 font-display text-white ${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>
+            <p className={`text-sm uppercase tracking-[0.24em] ${compact ? 'text-[#7f8f73]' : 'text-slate-400'}`}>
+              Kasallikni aniqlash
+            </p>
+            <h1 className={`mt-3 font-display ${compact ? 'text-2xl text-[#22311c]' : 'text-3xl text-white sm:text-4xl'}`}>
               Barglarni skan qiling
             </h1>
           </div>
@@ -122,7 +124,9 @@ export function ScanPage() {
             <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
               OpenAI Vision + lokal fallback
             </div>
-          ) : null}
+          ) : (
+            <div className="native-chip">AI scan ready</div>
+          )}
         </div>
 
         <CameraCapture images={images} onImagesChange={setImages} maxImages={MAX_BATCH_IMAGES} />
@@ -134,7 +138,13 @@ export function ScanPage() {
         ) : null}
 
         {submitting && progress.total ? (
-          <div className="mt-4 rounded-[1.75rem] border border-cyan-300/20 bg-cyan-300/10 px-4 py-4 text-sm text-cyan-100">
+          <div
+            className={`mt-4 rounded-[1.75rem] px-4 py-4 text-sm ${
+              compact
+                ? 'border border-[#dce8d1] bg-[#eef5e2] text-[#486038]'
+                : 'border border-cyan-300/20 bg-cyan-300/10 text-cyan-100'
+            }`}
+          >
             {progress.current}/{progress.total} rasm tahlil qilinmoqda...
           </div>
         ) : null}
@@ -144,7 +154,7 @@ export function ScanPage() {
             type="button"
             onClick={handleAnalyze}
             disabled={submitting}
-            className="button-primary w-full justify-center sm:w-auto"
+            className={compact ? 'native-primary-button w-full' : 'button-primary w-full justify-center sm:w-auto'}
           >
             {submitting ? (
               <>
@@ -163,7 +173,7 @@ export function ScanPage() {
           <button
             type="button"
             onClick={() => setImages([])}
-            className="button-ghost w-full justify-center sm:w-auto"
+            className={compact ? 'native-secondary-button w-full' : 'button-ghost w-full justify-center sm:w-auto'}
           >
             Qayta boshlash
           </button>
@@ -171,14 +181,14 @@ export function ScanPage() {
       </MotionSection>
 
       <div className={compact ? 'space-y-4' : 'space-y-6'}>
-        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
+        <section className={compact ? 'native-card p-5' : 'glass-panel p-6'}>
           <div className="flex items-start gap-4">
             <div className="rounded-3xl bg-cyan-300/10 p-3">
               <Bot className="h-6 w-6 text-cyan-200" />
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-400">AI oqimi</p>
-              <h2 className={`mt-2 font-display text-white ${compact ? 'text-2xl' : 'text-3xl'}`}>
+              <p className={`text-sm uppercase tracking-[0.24em] ${compact ? 'text-[#7f8f73]' : 'text-slate-400'}`}>AI oqimi</p>
+              <h2 className={`mt-2 font-display ${compact ? 'text-2xl text-[#22311c]' : 'text-3xl text-white'}`}>
                 Yangi analiz tartibi
               </h2>
             </div>
@@ -191,7 +201,11 @@ export function ScanPage() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-300"
+                className={`rounded-[1.5rem] px-4 py-4 text-sm ${
+                  compact
+                    ? 'border border-[#e1e9d7] bg-white text-[#58684d]'
+                    : 'border border-white/10 bg-white/5 text-slate-300'
+                }`}
               >
                 {item}
               </div>
@@ -199,10 +213,10 @@ export function ScanPage() {
           </div>
         </section>
 
-        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
+        <section className={compact ? 'native-card p-5' : 'glass-panel p-6'}>
           <div className="flex items-center gap-3">
-            <Sparkles className="h-6 w-6 text-amber-200" />
-            <h2 className={`font-display text-white ${compact ? 'text-xl' : 'text-2xl'}`}>So'nggi scanlar</h2>
+            <Sparkles className={`h-6 w-6 ${compact ? 'text-[#90ab4f]' : 'text-amber-200'}`} />
+            <h2 className={`font-display ${compact ? 'text-xl text-[#22311c]' : 'text-2xl text-white'}`}>So'nggi scanlar</h2>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -212,7 +226,11 @@ export function ScanPage() {
                   key={scan.id}
                   type="button"
                   onClick={() => navigate(`/results/${scan.id}`)}
-                  className="flex w-full items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-3 text-left transition hover:border-emerald-300/30 hover:bg-white/10"
+                  className={`flex w-full items-center gap-4 rounded-[1.5rem] p-3 text-left transition ${
+                    compact
+                      ? 'border border-[#e0e8d6] bg-white hover:bg-[#f6f8f1]'
+                      : 'border border-white/10 bg-white/5 hover:border-emerald-300/30 hover:bg-white/10'
+                  }`}
                 >
                   <img
                     src={scan.imageSrc}
@@ -220,28 +238,34 @@ export function ScanPage() {
                     className="h-16 w-16 rounded-2xl object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-white">{scan.diseaseName}</p>
-                    <p className="text-sm text-slate-400">{formatDateTime(scan.createdAt)}</p>
+                    <p className={`truncate font-medium ${compact ? 'text-[#22311c]' : 'text-white'}`}>{scan.diseaseName}</p>
+                    <p className={`text-sm ${compact ? 'text-[#7d8b74]' : 'text-slate-400'}`}>{formatDateTime(scan.createdAt)}</p>
                   </div>
-                  <div className="rounded-full bg-emerald-300/10 px-3 py-2 text-sm text-emerald-100">
+                  <div className={`rounded-full px-3 py-2 text-sm ${
+                    compact ? 'bg-[#edf5df] text-[#5f7c41]' : 'bg-emerald-300/10 text-emerald-100'
+                  }`}>
                     {scan.confidence}%
                   </div>
                 </button>
               ))
             ) : (
-              <div className="rounded-[1.5rem] border border-dashed border-white/10 px-4 py-5 text-sm text-slate-400">
+              <div className={`rounded-[1.5rem] px-4 py-5 text-sm ${
+                compact
+                  ? 'border border-dashed border-[#d8e2cd] text-[#7f8e74]'
+                  : 'border border-dashed border-white/10 text-slate-400'
+              }`}>
                 Hozircha scanlar yo'q. Birinchi tahlilni shu sahifadan boshlang.
               </div>
             )}
           </div>
         </section>
 
-        <section className={`glass-panel ${compact ? 'p-5' : 'p-6'}`}>
+        <section className={compact ? 'native-card p-5' : 'glass-panel p-6'}>
           <div className="flex items-center gap-3">
-            <ShieldCheck className="h-6 w-6 text-emerald-200" />
-            <h2 className={`font-display text-white ${compact ? 'text-xl' : 'text-2xl'}`}>Sifat bo'yicha tavsiya</h2>
+            <ShieldCheck className={`h-6 w-6 ${compact ? 'text-[#6e9440]' : 'text-emerald-200'}`} />
+            <h2 className={`font-display ${compact ? 'text-xl text-[#22311c]' : 'text-2xl text-white'}`}>Sifat bo'yicha tavsiya</h2>
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
+          <p className={`mt-4 text-sm leading-7 ${compact ? 'text-[#58684d]' : 'text-slate-300'}`}>
             Oqartirilgan yoki juda qorong'i suratlar ishonch foizini pasaytiradi. Bargni tekis
             fonda, tabiiy yorug'likda, suv tomchilarsiz holatda tasvirga oling.
           </p>

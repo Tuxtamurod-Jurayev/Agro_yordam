@@ -16,6 +16,7 @@ dist-ssr
 !.env.example
 .tools/
 android/local.properties
+*.apk
 
 # Editor directories and files
 .vscode/*

@@ -83,6 +83,34 @@
   .safe-bottom {
     padding-bottom: var(--safe-bottom);
   }
+
+  .native-page {
+    @apply space-y-4 pb-4;
+  }
+
+  .native-card {
+    @apply rounded-[1.75rem] border border-[#dde7d5] bg-[#fffaf1] shadow-[0_18px_45px_rgba(63,98,34,0.08)];
+  }
+
+  .native-muted-card {
+    @apply rounded-[1.4rem] border border-[#e7eedf] bg-white/90;
+  }
+
+  .native-input {
+    @apply w-full rounded-[1.2rem] border border-[#d6dfcd] bg-white px-4 py-3 text-sm text-[#1d2a19] outline-none transition placeholder:text-[#8a927f] focus:border-[#7ea34d] focus:ring-2 focus:ring-[#a9c57b]/20;
+  }
+
+  .native-primary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(90deg,#3c7c52,#89b449)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(93,141,55,0.26)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .native-secondary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[#d7e2ce] bg-white px-5 py-3 text-sm font-medium text-[#355129] transition hover:bg-[#f6f8f1];
+  }
+
+  .native-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-[#d8e3cc] bg-white px-3 py-1.5 text-xs font-medium text-[#50703d];
+  }
 }
 
 body::-webkit-scrollbar {

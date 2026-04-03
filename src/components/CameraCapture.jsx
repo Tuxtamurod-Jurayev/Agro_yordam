@@ -67,6 +67,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
   const imageCount = images.length
   const hasReachedLimit = imageCount >= maxImages
   const primaryImage = images[0] ?? ''
+  const compact = isNativeApp
 
   useEffect(() => {
     return () => {
@@ -240,7 +241,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
           <button
             type="button"
             onClick={handleStartCamera}
-            className="button-primary w-full justify-center sm:w-auto"
+            className={compact ? 'native-primary-button w-full sm:w-auto' : 'button-primary w-full justify-center sm:w-auto'}
             disabled={nativeLoading}
           >
             {nativeLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CameraIcon className="h-4 w-4" />}
@@ -253,7 +254,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
                 ? handleNativeCapture(CameraSource.Photos)
                 : fileInputRef.current?.click()
             }
-            className="button-ghost w-full justify-center sm:w-auto"
+            className={compact ? 'native-secondary-button w-full sm:w-auto' : 'button-ghost w-full justify-center sm:w-auto'}
             disabled={nativeLoading}
           >
             <ImageUp className="h-4 w-4" />
@@ -263,7 +264,7 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
             <button
               type="button"
               onClick={handleReset}
-              className="button-ghost w-full justify-center sm:w-auto"
+              className={compact ? 'native-secondary-button w-full sm:w-auto' : 'button-ghost w-full justify-center sm:w-auto'}
             >
               <RefreshCcw className="h-4 w-4" />
               Tozalash
@@ -271,7 +272,11 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
           ) : null}
         </div>
 
-        <div className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center text-sm text-slate-300 sm:w-auto">
+        <div className={`w-full rounded-full px-4 py-2 text-center text-sm sm:w-auto ${
+          compact
+            ? 'border border-[#d7e2ce] bg-white text-[#55654b]'
+            : 'border border-white/10 bg-white/5 text-slate-300'
+        }`}>
           {imageCount}/{maxImages} rasm tanlandi
         </div>
       </div>
@@ -287,13 +292,21 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
       />
 
       {error ? (
-        <div className="rounded-3xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+        <div className={`rounded-3xl px-4 py-3 text-sm ${
+          compact
+            ? 'border border-rose-200 bg-rose-50 text-rose-700'
+            : 'border border-rose-400/30 bg-rose-400/10 text-rose-100'
+        }`}>
           {error}
         </div>
       ) : null}
 
       {nativeLoading ? (
-        <div className="rounded-3xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+        <div className={`rounded-3xl px-4 py-3 text-sm ${
+          compact
+            ? 'border border-[#dce8d1] bg-[#eef5e2] text-[#486038]'
+            : 'border border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
+        }`}>
           Rasm tayyorlanmoqda...
         </div>
       ) : null}
@@ -333,19 +346,27 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
+      <div className={`overflow-hidden rounded-[2rem] ${
+        compact ? 'border border-[#dde7d5] bg-white' : 'border border-white/10 bg-white/5'
+      }`}>
         {primaryImage ? (
           <img src={primaryImage} alt="Tanlangan barg rasmi" className="aspect-[4/3] w-full object-cover" />
         ) : (
-          <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.18),_transparent_40%),linear-gradient(135deg,_rgba(15,23,42,0.95),_rgba(30,41,59,0.82))] p-8 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-300/15 ring-1 ring-emerald-300/30">
-              <ScanSearch className="h-7 w-7 text-emerald-200" />
+          <div className={`flex aspect-[4/3] flex-col items-center justify-center gap-4 p-8 text-center ${
+            compact
+              ? 'bg-[linear-gradient(180deg,#f9f7ef_0%,#edf5df_100%)]'
+              : 'bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.18),_transparent_40%),linear-gradient(135deg,_rgba(15,23,42,0.95),_rgba(30,41,59,0.82))]'
+          }`}>
+            <div className={`flex h-16 w-16 items-center justify-center rounded-3xl ${
+              compact ? 'bg-[#edf4df]' : 'bg-emerald-300/15 ring-1 ring-emerald-300/30'
+            }`}>
+              <ScanSearch className={`h-7 w-7 ${compact ? 'text-[#6f9540]' : 'text-emerald-200'}`} />
             </div>
             <div className="space-y-2">
-              <p className="font-display text-2xl text-white">
+              <p className={`font-display text-2xl ${compact ? 'text-[#22311c]' : 'text-white'}`}>
                 {maxImages} tagacha barg rasmini yuklab tahlilni boshlang
               </p>
-              <p className="mx-auto max-w-md text-sm text-slate-300">
+              <p className={`mx-auto max-w-md text-sm ${compact ? 'text-[#58684d]' : 'text-slate-300'}`}>
                 Har bir rasm avtomatik siqiladi va ketma-ket AI tahlilidan o'tadi. Native ilovada
                 kamera va galeriya qurilmaning o'z picker'i orqali ochiladi.
               </p>
@@ -359,15 +380,21 @@ export function CameraCapture({ images, onImagesChange, maxImages = 5 }) {
           {images.map((image, index) => (
             <div
               key={`${image.slice(0, 48)}-${index}`}
-              className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5"
+              className={`overflow-hidden rounded-[1.5rem] ${
+                compact ? 'border border-[#dce7d1] bg-white' : 'border border-white/10 bg-white/5'
+              }`}
             >
               <img src={image} alt={`Tanlangan rasm ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
               <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm text-slate-300">Rasm {index + 1}</span>
+                <span className={`text-sm ${compact ? 'text-[#55654b]' : 'text-slate-300'}`}>Rasm {index + 1}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(index)}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-100 transition hover:bg-rose-400/15 sm:w-auto"
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-3 py-2 text-sm transition sm:w-auto ${
+                    compact
+                      ? 'border border-rose-200 bg-rose-50 text-rose-700'
+                      : 'border border-rose-400/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/15'
+                  }`}
                 >
                   <Trash2 className="h-4 w-4" />
                   Olib tashlash
