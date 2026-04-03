@@ -38,8 +38,8 @@ Ko'p holatda dehqon yoki agronom bargdagi kasallikni tez aniqlash, unga mos tavs
 - real auth: register, login, profile update, password update, account delete
 - admin panel: user CRUD va statistik monitoring
 - scan tarixi va natijalarni saqlash
-- OpenAI Vision mavjud bo'lsa AI analiz
-- OpenAI bo'lmasa lokal fallback classifier
+- PlantNet Diseases API mavjud bo'lsa AI analiz
+- PlantNet bo'lmasa lokal fallback classifier
 - Android native image picker va camera oqimi
 - APK ichida admin oqimini bloklash, web-only admin flow
 - mobile-safe layout, bottom tab bar, compact user flow
@@ -50,7 +50,7 @@ Ko'p holatda dehqon yoki agronom bargdagi kasallikni tez aniqlash, unga mos tavs
 - `Backend`: Express
 - `Database`: Supabase Postgres
 - `Mobile`: Capacitor Android
-- `AI`: OpenAI Vision + lokal fallback
+- `AI`: PlantNet Diseases API + lokal fallback
 - `Deploy`: Vercel + GitHub
 
 ## Admin login
@@ -107,8 +107,10 @@ Muhim qiymatlar:
 - `JWT_SECRET`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
-- `OPENAI_API_KEY`
-- `OPENAI_VISION_MODEL`
+- `PLANTNET_API_KEY`
+- `PLANTNET_LANGUAGE`
+- `PLANTNET_ORGAN`
+- `PLANTNET_MODEL_LABEL`
 - `VITE_MOBILE_API_BASE_URL`
 
 ## Supabase
@@ -142,8 +144,10 @@ Muhim env'lar:
 
 - `DATABASE_URL` yoki `SUPABASE_SESSION_POOLER_URL`
 - `JWT_SECRET`
-- `OPENAI_API_KEY`
-- `OPENAI_VISION_MODEL`
+- `PLANTNET_API_KEY`
+- `PLANTNET_LANGUAGE`
+- `PLANTNET_ORGAN`
+- `PLANTNET_MODEL_LABEL`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 

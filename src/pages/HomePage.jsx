@@ -242,7 +242,7 @@ export function HomePage() {
               </div>
             </div>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Tizim real server API orqali ishlaydi. OpenAI kaliti bo'lmagan holatda ham lokal
+              Tizim real server API orqali ishlaydi. PlantNet kaliti bo'lmagan holatda ham lokal
               fallback classifier mavjud bo'lib, scan jarayonini to'xtatmaydi.
             </p>
           </div>

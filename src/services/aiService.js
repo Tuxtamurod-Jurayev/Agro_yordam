@@ -147,7 +147,7 @@ async function runLocalClassifier(imageSrc) {
   }
 }
 
-async function runOpenAiProxy(imageSrc) {
+async function runPlantNetProxy(imageSrc) {
   const { data } = await axios.post(
     toApiUrl('/api/analyze-plant'),
     { imageSrc },
@@ -163,17 +163,17 @@ async function runOpenAiProxy(imageSrc) {
     diseaseName: disease.name,
     confidence: clamp(Number(data.confidence ?? 80), 1, 99),
     summary: data.summary ?? `${disease.name} bo'yicha AI natijasi qaytdi.`,
-    indicators: data.indicators ?? ['OpenAI orqali tahlil qilindi'],
+    indicators: data.indicators ?? ['PlantNet orqali tahlil qilindi'],
     disease,
-    source: data.source ?? 'openai',
-    model: data.model ?? 'gpt-4.1-mini',
+    source: data.source ?? 'plantnet',
+    model: data.model ?? 'plantnet-diseases',
     cacheHit: Boolean(data.cacheHit),
   }
 }
 
 export async function analyzePlantImage(imageSrc) {
   try {
-    return await runOpenAiProxy(imageSrc)
+    return await runPlantNetProxy(imageSrc)
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status >= 500) {
       // Server AI ishlamasa foydalanuvchini to'xtatmaymiz, lokal klassifikatordan foydalanamiz.

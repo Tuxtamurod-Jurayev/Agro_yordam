@@ -79,10 +79,10 @@ export function ResultPage() {
 
   const disease = scan.disease
   const aiLabel =
-    scan.analysisSource === 'openai-cache'
-      ? 'OpenAI cache'
-      : scan.analysisSource === 'openai'
-        ? 'OpenAI Vision'
+    scan.analysisSource === 'plantnet-cache'
+      ? 'PlantNet cache'
+      : scan.analysisSource === 'plantnet'
+        ? 'PlantNet Diseases API'
         : 'Lokal fallback'
 
   return (

@@ -53,7 +53,7 @@ create table if not exists ai_analysis_cache (
   confidence integer not null check (confidence >= 1 and confidence <= 99),
   summary text,
   indicators jsonb not null default '[]'::jsonb,
-  source text not null default 'openai',
+  source text not null default 'plantnet',
   model_used text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

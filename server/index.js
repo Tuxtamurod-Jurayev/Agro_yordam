@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import OpenAI from 'openai'
 import { DISEASES, getDiseaseByKey } from '../src/data/diseases.js'
 import {
   ensureDatabaseSetup,
@@ -21,9 +20,11 @@ const app = express()
 const port = Number(process.env.PORT || 8787)
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url)
 const jwtSecret = process.env.JWT_SECRET || 'agro-yordam-local-secret'
-const openaiApiKey = process.env.OPENAI_API_KEY
-const defaultModel = process.env.OPENAI_VISION_MODEL || 'gpt-4.1-mini'
-const client = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
+const plantNetApiKey = process.env.PLANTNET_API_KEY
+const plantNetLanguage = process.env.PLANTNET_LANGUAGE || 'en'
+const plantNetOrgan = process.env.PLANTNET_ORGAN || 'leaf'
+const defaultModel = process.env.PLANTNET_MODEL_LABEL || 'plantnet-diseases'
+const plantNetIdentifyUrl = 'https://my-api.plantnet.org/v2/diseases/identify'
 
 app.use(cors())
 app.use(express.json({ limit: '20mb' }))
@@ -368,7 +369,7 @@ async function upsertCachedAnalysis(imageHash, analysis) {
         analysis.confidence,
         analysis.summary ?? '',
         JSON.stringify(analysis.indicators ?? []),
-        analysis.source ?? 'openai',
+        analysis.source ?? 'plantnet',
         analysis.model ?? defaultModel,
       ],
     )
@@ -390,25 +391,10 @@ async function upsertCachedAnalysis(imageHash, analysis) {
       analysis.confidence,
       analysis.summary ?? '',
       JSON.stringify(analysis.indicators ?? []),
-      analysis.source ?? 'openai',
+      analysis.source ?? 'plantnet',
       analysis.model ?? defaultModel,
     ],
   )
-}
-
-function extractJsonObject(rawText) {
-  if (!rawText) {
-    throw new Error("AI bo'sh javob qaytardi.")
-  }
-
-  const start = rawText.indexOf('{')
-  const end = rawText.lastIndexOf('}')
-
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error("AI javobidan JSON ajratib bo'lmadi.")
-  }
-
-  return JSON.parse(rawText.slice(start, end + 1))
 }
 
 function normalizeAnalysis(payload, model = defaultModel) {
@@ -424,17 +410,136 @@ function normalizeAnalysis(payload, model = defaultModel) {
     indicators: Array.isArray(payload.indicators)
       ? payload.indicators.filter(Boolean).slice(0, 3)
       : ['AI tahlili yakunlandi'],
-    source: 'openai',
+    source: 'plantnet',
     model,
   }
 }
 
-function buildDiseaseGuide() {
-  return DISEASES.map((disease) => ({
-    key: disease.key,
-    name: disease.name,
-    hints: disease.description,
-  }))
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replaceAll(/[_-]+/g, ' ')
+    .replaceAll(/\s+/g, ' ')
+    .trim()
+}
+
+function extractMimeType(imageSrc) {
+  const matched = /^data:([^;]+);base64,/i.exec(String(imageSrc || ''))
+  const mimeType = matched?.[1]?.toLowerCase()
+
+  if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
+    return mimeType
+  }
+
+  return 'image/jpeg'
+}
+
+async function createImageBlob(imageSrc) {
+  const imageResponse = await fetch(imageSrc)
+
+  if (!imageResponse.ok) {
+    throw new Error("Rasm ma'lumotini PlantNet uchun tayyorlab bo'lmadi.")
+  }
+
+  const mimeType = extractMimeType(imageSrc)
+  const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+
+  return new Blob([imageBuffer], { type: mimeType })
+}
+
+function mapPlantNetResultToDisease(result) {
+  const haystack = normalizeText([result?.name, result?.description, ...(result?.categories ?? [])].join(' '))
+  const rules = [
+    ['powdery_mildew', ['powdery mildew', 'powdery', 'mildew', 'oidium']],
+    [
+      'bacterial_blight',
+      ['bacterial blight', 'bacterial spot', 'bacterial canker', 'xanthomonas', 'pseudomonas', 'erwinia', 'fire blight'],
+    ],
+    ['early_blight', ['early blight', 'alternaria solani']],
+    ['rust', ['rust', 'puccinia', 'tranzschelia', 'uredin', 'melampsora', 'gymnosporangium']],
+    ['leaf_spot', ['leaf spot', 'septoria', 'cercospora', 'anthracnose', 'lesion', 'leaf blotch', 'spot', 'blight']],
+  ]
+
+  for (const [diseaseKey, keywords] of rules) {
+    if (keywords.some((keyword) => haystack.includes(normalizeText(keyword)))) {
+      return diseaseKey
+    }
+  }
+
+  return null
+}
+
+function scoreToConfidence(score) {
+  return Math.max(55, Math.min(99, Math.round(Number(score || 0) * 100)))
+}
+
+function buildPlantNetIndicators(results) {
+  return results
+    .slice(0, 3)
+    .map((result) => result?.description || result?.name)
+    .filter(Boolean)
+    .map((label) => String(label).trim())
+}
+
+function normalizePlantNetAnalysis(payload) {
+  const results = Array.isArray(payload?.results) ? payload.results : []
+  const bestMatch = results
+    .map((result) => ({
+      ...result,
+      diseaseKey: mapPlantNetResultToDisease(result),
+    }))
+    .find((result) => result.diseaseKey)
+
+  if (!bestMatch) {
+    throw new Error("PlantNet natijasini ilovadagi kasallik turlariga moslab bo'lmadi.")
+  }
+
+  const disease = getDiseaseByKey(bestMatch.diseaseKey)
+  const indicators = buildPlantNetIndicators(results)
+
+  return normalizeAnalysis(
+    {
+      diseaseKey: bestMatch.diseaseKey,
+      confidence: scoreToConfidence(bestMatch.score),
+      summary: `${disease.name} ehtimoli PlantNet disease identification orqali aniqlandi. Eng yaqin moslik: ${
+        bestMatch.description || bestMatch.name
+      }.`,
+      indicators: indicators.length ? indicators : ['PlantNet kasallik belgilarini aniqladi'],
+    },
+    payload?.version || defaultModel,
+  )
+}
+
+async function identifyDiseaseWithPlantNet(imageSrc) {
+  if (!plantNetApiKey) {
+    throw new Error('PLANTNET_API_KEY topilmadi.')
+  }
+
+  const imageBlob = await createImageBlob(imageSrc)
+  const formData = new FormData()
+  formData.append('images', imageBlob, `leaf-scan.${imageBlob.type === 'image/png' ? 'png' : 'jpg'}`)
+  formData.append('organs', plantNetOrgan)
+
+  const searchParams = new URLSearchParams({
+    'api-key': plantNetApiKey,
+    lang: plantNetLanguage,
+    'nb-results': '5',
+    'include-related-images': 'false',
+    'no-reject': 'true',
+  })
+
+  const plantNetResponse = await fetch(`${plantNetIdentifyUrl}?${searchParams.toString()}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!plantNetResponse.ok) {
+    const errorText = await plantNetResponse.text()
+    throw new Error(`PlantNet ${plantNetResponse.status}: ${errorText || 'nomaʼlum xatolik'}`)
+  }
+
+  const payload = await plantNetResponse.json()
+  return normalizePlantNetAnalysis(payload)
 }
 
 app.get('/api/health', async (_request, response) => {
@@ -443,7 +548,8 @@ app.get('/api/health', async (_request, response) => {
     response.json({
       ok: true,
       api: 'agro-yordam-server',
-      configured: Boolean(openaiApiKey),
+      configured: Boolean(plantNetApiKey),
+      aiProvider: 'plantnet',
       model: defaultModel,
       database: getDatabaseMode(),
       databaseError: getDatabaseConnectionError(),
@@ -914,116 +1020,23 @@ app.post('/api/analyze-plant', async (request, response) => {
       return response.json(cached)
     }
 
-    if (!client) {
+    if (!plantNetApiKey) {
       return response.status(503).json({
-        error: "OPENAI_API_KEY topilmadi. Server real AI uchun sozlanmagan.",
-        code: 'OPENAI_NOT_CONFIGURED',
+        error: "PLANTNET_API_KEY topilmadi. Server PlantNet uchun sozlanmagan.",
+        code: 'PLANTNET_NOT_CONFIGURED',
       })
     }
 
-    const diseaseGuide = JSON.stringify(buildDiseaseGuide())
-
-    const aiResponse = await client.responses.create({
-      model: defaultModel,
-      reasoning: {
-        effort: 'medium',
-      },
-      max_output_tokens: 500,
-      input: [
-        {
-          role: 'system',
-          content: [
-            {
-              type: 'input_text',
-              text:
-                "Siz qishloq xo'jaligi bo'yicha vizual tahlil yordamchisisiz. Faqat berilgan kasallik kalitlaridan birini tanlang va qat'iy JSON qaytaring. Hech qanday markdown ishlatmang.",
-            },
-          ],
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: `Barg rasmini tahlil qiling. Quyidagi kasallik ro'yxatidan eng mosini tanlang: ${diseaseGuide}.
-
-JSON formati aynan shunday bo'lsin:
-{
-  "diseaseKey": "healthy | early_blight | leaf_spot | rust | powdery_mildew | bacterial_blight",
-  "confidence": 1-99,
-  "summary": "uzbek tilida 1-2 gap",
-  "indicators": ["3 ta qisqa indikator"]
-}
-
-Qoidalar:
-- Agar rasm sifati past bo'lsa ham eng ehtimoliy variantni tanlang.
-- Confidence faqat butun son bo'lsin.
-- Summary va indicators o'zbek tilida bo'lsin.
-- Faqat JSON qaytaring.`,
-            },
-            {
-              type: 'input_image',
-              image_url: imageSrc,
-              detail: 'auto',
-            },
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'plant_disease_analysis',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              diseaseKey: {
-                type: 'string',
-                enum: [
-                  'healthy',
-                  'early_blight',
-                  'leaf_spot',
-                  'rust',
-                  'powdery_mildew',
-                  'bacterial_blight',
-                ],
-              },
-              confidence: {
-                type: 'integer',
-                minimum: 1,
-                maximum: 99,
-              },
-              summary: {
-                type: 'string',
-              },
-              indicators: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                },
-                minItems: 1,
-                maxItems: 3,
-              },
-            },
-            required: ['diseaseKey', 'confidence', 'summary', 'indicators'],
-          },
-        },
-      },
-    })
-
-    const parsed = extractJsonObject(aiResponse.output_text)
-    const normalized = normalizeAnalysis(parsed, aiResponse.model || defaultModel)
+    const normalized = await identifyDiseaseWithPlantNet(imageSrc)
     await upsertCachedAnalysis(imageHash, normalized)
 
     return response.json(normalized)
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "OpenAI tahlili vaqtida noma'lum xatolik."
+    const message = error instanceof Error ? error.message : "PlantNet tahlili vaqtida noma'lum xatolik."
 
     return response.status(502).json({
       error: `AI tahlili muvaffaqiyatsiz tugadi: ${message}`,
-      code: 'OPENAI_ANALYSIS_FAILED',
+      code: 'PLANTNET_ANALYSIS_FAILED',
     })
   }
 })
