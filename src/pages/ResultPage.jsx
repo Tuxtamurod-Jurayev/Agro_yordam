@@ -81,9 +81,13 @@ export function ResultPage() {
   const aiLabel =
     scan.analysisSource === 'plantnet-cache'
       ? 'PlantNet cache'
-      : scan.analysisSource === 'plantnet'
-        ? 'PlantNet Diseases API'
-        : 'Lokal fallback'
+      : scan.analysisSource === 'openai-cache'
+        ? 'OpenAI cache'
+        : scan.analysisSource === 'plantnet'
+          ? 'PlantNet Diseases API'
+          : scan.analysisSource === 'openai'
+            ? 'OpenAI Vision API'
+        : 'Online AI'
 
   return (
     <div className={compact ? 'space-y-4 pb-4' : 'grid gap-6 xl:grid-cols-[0.95fr_1.05fr]'}>

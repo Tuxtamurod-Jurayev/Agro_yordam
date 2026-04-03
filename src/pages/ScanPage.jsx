@@ -122,7 +122,7 @@ export function ScanPage() {
           </div>
           {!compact ? (
             <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100">
-              PlantNet + lokal fallback
+              PlantNet + OpenAI Vision
             </div>
           ) : (
             <div className="native-chip">AI scan ready</div>
@@ -196,7 +196,7 @@ export function ScanPage() {
           <div className="mt-6 grid gap-3">
             {[
               "Rasm avtomatik siqiladi va shu sabab katta fayllar barqarorroq yuboriladi",
-              "PlantNet mavjud bo'lsa disease identification natijasi olinadi, bo'lmasa lokal fallback ishlaydi",
+              "PlantNet primary provider sifatida ishlaydi, zarur bo'lsa OpenAI Vision secondary provider sifatida davom ettiradi",
               "Bir martada 5 tagacha rasm ketma-ket tahlil qilinib, natijalar tarixga saqlanadi",
             ].map((item) => (
               <div

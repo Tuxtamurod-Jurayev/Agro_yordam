@@ -242,8 +242,8 @@ export function HomePage() {
               </div>
             </div>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Tizim real server API orqali ishlaydi. PlantNet kaliti bo'lmagan holatda ham lokal
-              fallback classifier mavjud bo'lib, scan jarayonini to'xtatmaydi.
+              Tizim real server API orqali ishlaydi. PlantNet Diseases API primary provider,
+              OpenAI Vision API esa secondary provider sifatida scan jarayonini davom ettiradi.
             </p>
           </div>
         </MotionDiv>
