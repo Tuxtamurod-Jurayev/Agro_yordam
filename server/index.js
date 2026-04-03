@@ -670,6 +670,7 @@ app.get('/api/health', async (_request, response) => {
       ok: true,
       api: 'agro-yordam-server',
       configured: Boolean(plantNetApiKey || openAiVisionApiKey),
+      aiReady: Boolean(plantNetApiKey || openAiVisionApiKey),
       aiProvider: 'plantnet+openai',
       providers: {
         plantnet: Boolean(plantNetApiKey),
@@ -1082,8 +1083,8 @@ app.post('/api/scans', authMiddleware, async (request, response) => {
       analysis.diseaseKey,
       analysis.diseaseName,
       analysis.confidence,
-      analysis.source ?? 'local',
-      analysis.model ?? 'local-vision-heuristic',
+      analysis.source ?? 'online-ai',
+      analysis.model ?? 'online-ai',
       analysis.summary ?? '',
       JSON.stringify(analysis.indicators ?? []),
     ],

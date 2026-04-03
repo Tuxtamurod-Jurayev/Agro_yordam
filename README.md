@@ -155,6 +155,17 @@ Muhim env'lar:
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 
+Vercel env sync tartibi:
+
+```bash
+npx vercel login
+npm run vercel:link
+npm run vercel:pull
+npm run vercel:env:sync
+```
+
+`vercel:env:sync` lokal `.env` ichidagi production qiymatlarni Vercel project env'lariga yuboradi.
+
 Health check:
 
 ```bash

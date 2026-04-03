@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CameraCapture } from '../components/CameraCapture'
 import { useAuth } from '../context/AuthContext'
+import { getHealth } from '../services/apiService'
 import { analyzePlantImage } from '../services/aiService'
 import { platformService } from '../services/platformService'
 import { isNativeApp } from '../services/runtime'
@@ -16,6 +17,8 @@ export function ScanPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [recentScans, setRecentScans] = useState([])
+  const [aiReady, setAiReady] = useState(true)
+  const [aiStatusMessage, setAiStatusMessage] = useState('')
   const [progress, setProgress] = useState({
     current: 0,
     total: 0,
@@ -43,6 +46,47 @@ export function ScanPage() {
     loadRecentScans()
   }, [session])
 
+  useEffect(() => {
+    let active = true
+
+    async function loadHealth() {
+      try {
+        const health = await getHealth()
+
+        if (!active) {
+          return
+        }
+
+        const ready = Boolean(health?.aiReady ?? health?.configured)
+        setAiReady(ready)
+
+        if (!ready) {
+          setAiStatusMessage(
+            "Serverdagi AI providerlar hali sozlanmagan. PLANTNET_API_KEY va OPENAI_API_KEY production env'ga qo'yilishi kerak.",
+          )
+          return
+        }
+
+        setAiStatusMessage('')
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setAiReady(false)
+        setAiStatusMessage(
+          "AI server holatini tekshirib bo'lmadi. Internet yoki backend ulanishini qayta tekshiring.",
+        )
+      }
+    }
+
+    loadHealth()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   async function handleAnalyze() {
     if (!images.length) {
       setError("Avval barg rasmini tanlang yoki kameradan suratga oling.")
@@ -51,6 +95,11 @@ export function ScanPage() {
 
     if (!session) {
       setError("Sessiya topilmadi. Qayta login qiling.")
+      return
+    }
+
+    if (!aiReady) {
+      setError(aiStatusMessage || "Online AI providerlar tayyor emas. Keyinroq qayta urinib ko'ring.")
       return
     }
 
@@ -137,6 +186,18 @@ export function ScanPage() {
           </div>
         ) : null}
 
+        {!aiReady && aiStatusMessage ? (
+          <div
+            className={`mt-4 rounded-[1.75rem] px-4 py-4 text-sm ${
+              compact
+                ? 'border border-amber-200 bg-amber-50 text-amber-800'
+                : 'border border-amber-300/30 bg-amber-300/10 text-amber-100'
+            }`}
+          >
+            {aiStatusMessage}
+          </div>
+        ) : null}
+
         {submitting && progress.total ? (
           <div
             className={`mt-4 rounded-[1.75rem] px-4 py-4 text-sm ${
@@ -153,7 +214,7 @@ export function ScanPage() {
           <button
             type="button"
             onClick={handleAnalyze}
-            disabled={submitting}
+            disabled={submitting || !aiReady}
             className={compact ? 'native-primary-button w-full' : 'button-primary w-full justify-center sm:w-auto'}
           >
             {submitting ? (
