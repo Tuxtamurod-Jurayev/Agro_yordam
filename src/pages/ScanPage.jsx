@@ -61,8 +61,16 @@ export function ScanPage() {
         setAiReady(ready)
 
         if (!ready) {
+          const providers = health?.providers || {}
+          const availableProviders = [
+            providers.plantnet ? 'PlantNet' : null,
+            providers.openai ? 'OpenAI Vision' : null,
+          ].filter(Boolean)
+
           setAiStatusMessage(
-            "Serverdagi AI providerlar hali sozlanmagan. PLANTNET_API_KEY va OPENAI_API_KEY production env'ga qo'yilishi kerak.",
+            availableProviders.length
+              ? `Hozir faqat ${availableProviders.join(' + ')} tayyor. Qolgan AI env qiymatlarini production'ga qo'ying.`
+              : "Serverdagi AI providerlar hali sozlanmagan. PLANTNET_API_KEY va OPENAI_API_KEY production env'ga qo'yilishi kerak.",
           )
           return
         }

@@ -27,11 +27,28 @@ const plantNetOrgan = process.env.PLANTNET_ORGAN || 'leaf'
 const defaultModel = process.env.PLANTNET_MODEL_LABEL || 'plantnet-diseases'
 const plantNetIdentifyUrl = 'https://my-api.plantnet.org/v2/diseases/identify'
 const openAiVisionApiKey = process.env.OPENAI_API_KEY
-const openAiVisionModel = process.env.OPENAI_VISION_MODEL || 'gpt-4.1-mini'
+const openAiVisionModel = process.env.OPENAI_VISION_MODEL || 'gpt-5.4-mini'
+const plantNetTimeoutMs = Number(process.env.PLANTNET_TIMEOUT_MS || 30000)
+const openAiTimeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 45000)
+const aiProviderOrder = String(process.env.AI_PROVIDER_ORDER || 'plantnet,openai')
+  .split(',')
+  .map((item) => item.trim().toLowerCase())
+  .filter((item) => item === 'plantnet' || item === 'openai')
 const openAiClient = openAiVisionApiKey ? new OpenAI({ apiKey: openAiVisionApiKey }) : null
 
 app.use(cors())
 app.use(express.json({ limit: '20mb' }))
+
+function withTimeout(run, timeoutMs, label) {
+  return Promise.race([
+    run(),
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${label} timeout (${timeoutMs}ms)`))
+      }, timeoutMs)
+    }),
+  ])
+}
 
 function createToken(user) {
   return jwt.sign(
@@ -558,10 +575,15 @@ async function identifyDiseaseWithPlantNet(imageSrc) {
     'no-reject': 'true',
   })
 
-  const plantNetResponse = await fetch(`${plantNetIdentifyUrl}?${searchParams.toString()}`, {
-    method: 'POST',
-    body: formData,
-  })
+  const plantNetResponse = await withTimeout(
+    () =>
+      fetch(`${plantNetIdentifyUrl}?${searchParams.toString()}`, {
+        method: 'POST',
+        body: formData,
+      }),
+    plantNetTimeoutMs,
+    'PlantNet',
+  )
 
   if (!plantNetResponse.ok) {
     const errorText = await plantNetResponse.text()
@@ -578,25 +600,27 @@ async function identifyDiseaseWithOpenAi(imageSrc) {
   }
 
   const diseaseGuide = JSON.stringify(buildDiseaseGuide())
-  const aiResponse = await openAiClient.responses.create({
-    model: openAiVisionModel,
-    input: [
-      {
-        role: 'system',
-        content: [
+  const aiResponse = await withTimeout(
+    () =>
+      openAiClient.responses.create({
+        model: openAiVisionModel,
+        input: [
           {
-            type: 'input_text',
-            text:
-              "Siz qishloq xo'jaligi bo'yicha vizual tahlil yordamchisisiz. Faqat berilgan kasallik kalitlaridan birini tanlang va qat'iy JSON qaytaring. Hech qanday markdown ishlatmang.",
+            role: 'system',
+            content: [
+              {
+                type: 'input_text',
+                text:
+                  "Siz qishloq xo'jaligi bo'yicha vizual tahlil yordamchisisiz. Faqat berilgan kasallik kalitlaridan birini tanlang va qat'iy JSON qaytaring. Hech qanday markdown ishlatmang.",
+              },
+            ],
           },
-        ],
-      },
-      {
-        role: 'user',
-        content: [
           {
-            type: 'input_text',
-            text: `Barg rasmini tahlil qiling. Quyidagi kasallik ro'yxatidan eng mosini tanlang: ${diseaseGuide}.
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: `Barg rasmini tahlil qiling. Quyidagi kasallik ro'yxatidan eng mosini tanlang: ${diseaseGuide}.
 
 JSON formati aynan shunday bo'lsin:
 {
@@ -611,50 +635,53 @@ Qoidalar:
 - Confidence faqat butun son bo'lsin.
 - Summary va indicators o'zbek tilida bo'lsin.
 - Faqat JSON qaytaring.`,
-          },
-          {
-            type: 'input_image',
-            image_url: imageSrc,
-            detail: 'auto',
+              },
+              {
+                type: 'input_image',
+                image_url: imageSrc,
+                detail: 'auto',
+              },
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'plant_disease_analysis',
-        strict: true,
-        schema: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            diseaseKey: {
-              type: 'string',
-              enum: ['healthy', 'early_blight', 'leaf_spot', 'rust', 'powdery_mildew', 'bacterial_blight'],
-            },
-            confidence: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 99,
-            },
-            summary: {
-              type: 'string',
-            },
-            indicators: {
-              type: 'array',
-              items: {
-                type: 'string',
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'plant_disease_analysis',
+            strict: true,
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                diseaseKey: {
+                  type: 'string',
+                  enum: ['healthy', 'early_blight', 'leaf_spot', 'rust', 'powdery_mildew', 'bacterial_blight'],
+                },
+                confidence: {
+                  type: 'integer',
+                  minimum: 1,
+                  maximum: 99,
+                },
+                summary: {
+                  type: 'string',
+                },
+                indicators: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                  },
+                  minItems: 1,
+                  maxItems: 3,
+                },
               },
-              minItems: 1,
-              maxItems: 3,
+              required: ['diseaseKey', 'confidence', 'summary', 'indicators'],
             },
           },
-          required: ['diseaseKey', 'confidence', 'summary', 'indicators'],
         },
-      },
-    },
-  })
+      }),
+    openAiTimeoutMs,
+    'OpenAI',
+  )
 
   const parsed = extractJsonObject(aiResponse.output_text)
   return normalizeAnalysis(parsed, {
@@ -672,9 +699,14 @@ app.get('/api/health', async (_request, response) => {
       configured: Boolean(plantNetApiKey || openAiVisionApiKey),
       aiReady: Boolean(plantNetApiKey || openAiVisionApiKey),
       aiProvider: 'plantnet+openai',
+      aiProviderOrder,
       providers: {
         plantnet: Boolean(plantNetApiKey),
         openai: Boolean(openAiVisionApiKey),
+      },
+      timeouts: {
+        plantnet: plantNetTimeoutMs,
+        openai: openAiTimeoutMs,
       },
       model: `${defaultModel} | ${openAiVisionModel}`,
       database: getDatabaseMode(),

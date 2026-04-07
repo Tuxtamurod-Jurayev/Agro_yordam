@@ -115,6 +115,34 @@ Muhim qiymatlar:
 - `OPENAI_VISION_MODEL`
 - `VITE_MOBILE_API_BASE_URL`
 
+Tayyor `.env` bloki:
+
+```env
+VITE_API_BASE_URL=
+VITE_MOBILE_API_BASE_URL=https://agro-yordam.vercel.app
+VITE_SUPABASE_URL=https://txbniapddbhaumqbqevw.supabase.co
+VITE_SUPABASE_KEY=sb_publishable_Qww195wGQ9S1dEs1cs-ZtQ_ZvVl3biu
+
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.txbniapddbhaumqbqevw.supabase.co:5432/postgres
+SUPABASE_SESSION_POOLER_URL=postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[YOUR-REGION].pooler.supabase.com:5432/postgres
+SUPABASE_PROJECT_REF=txbniapddbhaumqbqevw
+
+JWT_SECRET=replace-with-a-long-random-secret
+ADMIN_EMAIL=admin@agro-yordam.uz
+ADMIN_PASSWORD=admin123
+ADMIN_NAME=Agro Admin
+
+PLANTNET_API_KEY=your-plantnet-key
+PLANTNET_LANGUAGE=en
+PLANTNET_ORGAN=leaf
+PLANTNET_MODEL_LABEL=plantnet-diseases
+PLANTNET_TIMEOUT_MS=30000
+
+OPENAI_API_KEY=your-openai-key
+OPENAI_VISION_MODEL=gpt-5.4-mini
+OPENAI_TIMEOUT_MS=45000
+```
+
 ## Supabase
 
 Project:
