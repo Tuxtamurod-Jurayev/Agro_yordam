@@ -20,18 +20,25 @@ if (!existsSync(vercelProjectPath)) {
 
 const parsed = dotenv.parse(readFileSync(envPath))
 const requiredKeys = [
+  'VITE_API_BASE_URL',
+  'VITE_MOBILE_API_BASE_URL',
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_KEY',
   'DATABASE_URL',
   'SUPABASE_SESSION_POOLER_URL',
   'JWT_SECRET',
   'ADMIN_EMAIL',
   'ADMIN_PASSWORD',
+  'ADMIN_NAME',
   'PLANTNET_API_KEY',
   'PLANTNET_LANGUAGE',
   'PLANTNET_ORGAN',
   'PLANTNET_MODEL_LABEL',
+  'PLANTNET_TIMEOUT_MS',
   'OPENAI_API_KEY',
   'OPENAI_VISION_MODEL',
-  'VITE_MOBILE_API_BASE_URL',
+  'OPENAI_TIMEOUT_MS',
+  'AI_PROVIDER_ORDER',
 ]
 
 const availableEntries = requiredKeys.filter((key) => String(parsed[key] || '').trim())

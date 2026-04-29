@@ -35,6 +35,7 @@ const aiProviderOrder = String(process.env.AI_PROVIDER_ORDER || 'plantnet,openai
   .map((item) => item.trim().toLowerCase())
   .filter((item) => item === 'plantnet' || item === 'openai')
 const openAiClient = openAiVisionApiKey ? new OpenAI({ apiKey: openAiVisionApiKey }) : null
+const supportedAiProviders = ['plantnet', 'openai']
 
 app.use(cors())
 app.use(express.json({ limit: '20mb' }))
@@ -48,6 +49,37 @@ function withTimeout(run, timeoutMs, label) {
       }, timeoutMs)
     }),
   ])
+}
+
+function getOrderedAiProviders() {
+  const uniqueProviders = new Set()
+  const orderedProviders = []
+
+  for (const provider of [...aiProviderOrder, ...supportedAiProviders]) {
+    if (uniqueProviders.has(provider)) {
+      continue
+    }
+
+    uniqueProviders.add(provider)
+    orderedProviders.push(provider)
+  }
+
+  return orderedProviders
+}
+
+function getConfiguredAiProviders() {
+  return {
+    plantnet: {
+      enabled: Boolean(plantNetApiKey),
+      label: 'PlantNet',
+      run: identifyDiseaseWithPlantNet,
+    },
+    openai: {
+      enabled: Boolean(openAiVisionApiKey),
+      label: 'OpenAI',
+      run: identifyDiseaseWithOpenAi,
+    },
+  }
 }
 
 function createToken(user) {
@@ -693,16 +725,18 @@ Qoidalar:
 app.get('/api/health', async (_request, response) => {
   try {
     await query('select 1')
+    const configuredProviders = getConfiguredAiProviders()
+
     response.json({
       ok: true,
       api: 'agro-yordam-server',
       configured: Boolean(plantNetApiKey || openAiVisionApiKey),
       aiReady: Boolean(plantNetApiKey || openAiVisionApiKey),
-      aiProvider: 'plantnet+openai',
-      aiProviderOrder,
+      aiProvider: getOrderedAiProviders().join('+'),
+      aiProviderOrder: getOrderedAiProviders(),
       providers: {
-        plantnet: Boolean(plantNetApiKey),
-        openai: Boolean(openAiVisionApiKey),
+        plantnet: configuredProviders.plantnet.enabled,
+        openai: configuredProviders.openai.enabled,
       },
       timeouts: {
         plantnet: plantNetTimeoutMs,
@@ -1187,8 +1221,26 @@ app.post('/api/analyze-plant', async (request, response) => {
 
     const providerErrors = []
     let normalized = null
+    const configuredProviders = getConfiguredAiProviders()
 
-    if (plantNetApiKey) {
+    for (const providerKey of getOrderedAiProviders()) {
+      const provider = configuredProviders[providerKey]
+
+      if (!provider?.enabled || normalized) {
+        continue
+      }
+
+      try {
+        normalized = await provider.run(imageSrc)
+      } catch (providerError) {
+        providerErrors.push(
+          `${provider.label}: ${providerError instanceof Error ? providerError.message : "noma'lum xatolik"}`,
+        )
+      }
+    }
+
+    // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
+    if (false && plantNetApiKey) {
       try {
         normalized = await identifyDiseaseWithPlantNet(imageSrc)
       } catch (plantNetError) {
@@ -1196,7 +1248,8 @@ app.post('/api/analyze-plant', async (request, response) => {
       }
     }
 
-    if (!normalized && openAiVisionApiKey) {
+    // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
+    if (false && !normalized && openAiVisionApiKey) {
       try {
         normalized = await identifyDiseaseWithOpenAi(imageSrc)
       } catch (openAiError) {

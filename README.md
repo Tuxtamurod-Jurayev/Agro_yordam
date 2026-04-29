@@ -111,8 +111,11 @@ Muhim qiymatlar:
 - `PLANTNET_LANGUAGE`
 - `PLANTNET_ORGAN`
 - `PLANTNET_MODEL_LABEL`
+- `PLANTNET_TIMEOUT_MS`
 - `OPENAI_API_KEY`
 - `OPENAI_VISION_MODEL`
+- `OPENAI_TIMEOUT_MS`
+- `AI_PROVIDER_ORDER`
 - `VITE_MOBILE_API_BASE_URL`
 
 Tayyor `.env` bloki:
@@ -141,6 +144,7 @@ PLANTNET_TIMEOUT_MS=30000
 OPENAI_API_KEY=your-openai-key
 OPENAI_VISION_MODEL=gpt-5.4-mini
 OPENAI_TIMEOUT_MS=45000
+AI_PROVIDER_ORDER=plantnet,openai
 ```
 
 ## Supabase
@@ -178,8 +182,14 @@ Muhim env'lar:
 - `PLANTNET_LANGUAGE`
 - `PLANTNET_ORGAN`
 - `PLANTNET_MODEL_LABEL`
+- `PLANTNET_TIMEOUT_MS`
 - `OPENAI_API_KEY`
 - `OPENAI_VISION_MODEL`
+- `OPENAI_TIMEOUT_MS`
+- `AI_PROVIDER_ORDER`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_KEY`
+- `VITE_MOBILE_API_BASE_URL`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 
@@ -193,6 +203,7 @@ npm run vercel:env:sync
 ```
 
 `vercel:env:sync` lokal `.env` ichidagi production qiymatlarni Vercel project env'lariga yuboradi.
+Bo'sh qiymatlar yuborilmaydi, shuning uchun ayniqsa `PLANTNET_API_KEY`, `OPENAI_API_KEY`, `VITE_SUPABASE_URL` va `VITE_SUPABASE_KEY` `.env` ichida to'ldirilgan bo'lishi kerak.
 
 Health check:
 
